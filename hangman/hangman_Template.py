@@ -45,6 +45,20 @@ class Hangman:
         # TODO 2: Print two message upon initialization:
         # 1. "The mystery word has {len(self.word)} characters" (The number of letters is NOT the UNIQUE number of letters)
         # 2. {word_guessed}
+        
+        ##select a random word from the list
+        self.word = random.choice(word_list)
+        ##print out the result
+        print(f'The mystery word has {len(self.word)} characters (The number of letters is NOT the UNIQUE number of letters)')
+
+        ##initialise the rest    
+        self.word_guessed = str()
+        self.num_letters = int()
+        self.num_lives = num_lives
+        self.list_letters =[]    
+        print (f'There is n')
+        
+
         pass
 
     def check_letter(self, letter) -> None:
