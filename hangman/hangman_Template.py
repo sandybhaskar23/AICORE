@@ -52,11 +52,11 @@ class Hangman:
         print(f'The mystery word has {len(self.word)} characters (The number of letters is NOT the UNIQUE number of letters)')
 
         ##initialise the rest of the attributes.   
-        self.word_guessed = []
-        self.num_letters = int()
+        self.word_guessed = ["_"] * len(self.word)
+        self.num_letters = len(set(self.word))
         self.num_lives = num_lives
         self.list_letters =[]    
-        print (f'The word guessed is {self.word_guessed}')
+        print (f'The word guessed is {self.word_guessed} long')
         
 
         
