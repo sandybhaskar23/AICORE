@@ -35,8 +35,8 @@ class Hangman:
     ask_letter()
         Asks the user for a letter.
     '''
-    def __init__(self, word_list, num_lives=5):
-       
+    def __init__(self, word_list, num_lives=6):
+        ##hangmand requires 6 
         ##select a random word from the list
         self.word = random.choice(word_list).lower()
         ##print out the result
@@ -67,6 +67,9 @@ class Hangman:
         '''
         #compensate for different input casing by converting to lower case 
         letter = letter.lower()
+
+        #get the graphic dictionary
+        self.graphic()
 
         ##Capture the letter used
         self.list_letters.append(letter)
@@ -100,7 +103,9 @@ class Hangman:
         else:
             ##two scenarios; letter has been guessed before and it is the incorrect letter
             print (f'Letter: "{letter}" is not in the word')
-            self.num_lives -= 1 
+            print (f'{self.hang_graphic[self.num_lives]}') 
+            self.num_lives -= 1
+            
 
             ##run out of lives if value is zero
             if self.num_lives == 0:
@@ -130,7 +135,78 @@ class Hangman:
                 False                
             else:
                 self.check_letter(letter) 
-                            
+
+    def graphic(self):
+
+        self.hang_graphic = {}
+
+        self.hang_graphic = {
+            5:'\
+                __________\n\
+               |          |\n\
+               |         (O)\n\
+               |\n\
+               |\n\
+               |\n\
+               |\n\
+               |\n\
+            ___|___ \n',
+            
+            4:'\
+                __________\n\
+               |          |\n\
+               |         (O)\n\
+               |          |\n\
+               |          |\n\
+               |\n\
+               |\n\
+               |\n\
+            ___|___ ',
+            
+            3:'\
+                __________\n\
+               |          |\n\
+               |         (O)\n\
+               |          |\n\
+               |          |\n\
+               |         / \n\
+               |        / \n\
+               |\n\
+            ___|___ ',
+
+            2:'\
+                __________\n\
+               |          |\n\
+               |         (O)\n\
+               |          |\n\
+               |          | \n\
+               |         / \  \n\
+               |        /   \  \n\
+               |\n\
+            ___|___ ',
+            1:'\
+                __________\n\
+               |          |\n\
+               |         (O)\n\
+               |         _|\n\
+               |        / |\n\
+               |         / \ \n\
+               |        /   \\n\
+               |\
+            ___|___ ',
+            0:'\
+                __________\n\
+               |          |\n\
+               |         (O)\n\
+               |         _|_\n\
+               |        / | \ \n\
+               |         / \ \n\
+               |        /   \ \n\
+               |      Game Over\n\
+            ___|___ ',
+        }
+
+        
         
 
 def play_game(word_list):
