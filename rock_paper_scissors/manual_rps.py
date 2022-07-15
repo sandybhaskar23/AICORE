@@ -19,7 +19,7 @@ class rps:
         #take the dict of choices and bind it to the class
         self.game_choice = game_choice
 
-        ##get the options for the game will be used for the computer and user
+        ##get the options for the game it will be used for the computer and user
         self.computer_options = list(self.game_choice.keys())
         ##swap the keys around for later to work out the winner
         self.math_choice = dict([(value, key) for key, value in self.game_choice.items()])
@@ -107,7 +107,7 @@ def play_game(game_choice):
         print("Next round\n")
         x +=1
     
-    ###Provide a support at the end of the final scores
+    ###Provide a report at the end of the final scores
     print (f"#The final results are;\n")
    
     for player,value in gameon.overall_winner.items():
