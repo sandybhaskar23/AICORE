@@ -106,7 +106,7 @@ class rps:
         ##create container to hold data
         data = np.ndarray(shape=(1, 224, 224, 3), dtype=np.float32)
 
-        stop_playing = time.time() + 3
+        stop_playing = time.time() + 5
         while time.time() < stop_playing: 
             ##take input from camera image
             ret, frame = cap.read()
@@ -116,6 +116,21 @@ class rps:
             normalized_image = (image_np.astype(np.float32) / 127.0) - 1 # Normalize the image
             data[0] = normalized_image
             prediction = model.predict(data)
+
+            ##add counter to image
+            # Display countdown on each frame
+            # specify the font and draw the
+            # countdown using puttext
+            #format string to make it look nice in image
+            counter = ", ".join(f"{key} {value}" for key, value in self.overall_winner.items())
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            cv2.putText(frame, str(counter),
+                        (20, 100), font,
+                        1, (0, 255, 255),
+                        4, cv2.LINE_AA)
+
+
+
             ##display the image in the frame
             cv2.imshow('frame', frame)
             # Press q to close the window
@@ -129,10 +144,11 @@ class rps:
             self.get_winner()
 
             #check values to see if they equal 3. Time constraint still in place
-            if 3 in self.overall_winner.values():
+            if 28 in self.overall_winner.values():
                 break
             
-            #this corresponds to the matrix below
+            
+            #this corresponds to the matrix below. Kill with q
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             
