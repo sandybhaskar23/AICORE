@@ -6,6 +6,12 @@ Using https://teachablemachine.withgoogle.com/train/image to train a model which
 
 With the 2nd attempt I hope to write an alogirithmn which I can play rock,paper & scissors against the computer. 
 
-todo:
-Build class which reads input? is it an image? 
-Use a weight against each class 
+
+Camera_rps
+
+Reads image uses the keras model to predict to then calculate the strongest probability of it being one of the RPS.  Compares with the computer's random choice to then check the overall winner.  
+
+
+The first to reach 3 wins 
+
+#todo slow the speed of game 
