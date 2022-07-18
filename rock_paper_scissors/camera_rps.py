@@ -11,8 +11,6 @@ The second function will ask the user for an input and return it.
 
 the model now has a nothing in its ranking compared to the manaul rps
 
-#todo when there is a draw it only reports one over winner. Fix so it says it is a total draw.
-
 '''
 
 
@@ -52,8 +50,7 @@ class rps:
 
         #take in the user input
         self.user_choice = input("Enter rock or paper or scissors: ").lower()
-        #print (self.user_choice)
-        #print (self.computer_options)
+   
         #make sure input is valid
         self.check_user_input()    
 
@@ -163,16 +160,13 @@ def play_game(game_choice):
 
     ##call the class
     gameon = rps(game_choice)
-    x =1
-    #while x in range(1,5):
-    #gameon = rps(game_choice)
+       
     gameon.get_computer_choice()
-    #gameon.get_user_choice()
+     ##start the competition   
     gameon.get_prediction()
-    ##start the competition
-    #gameon.get_winner()
+    
     print("Next round\n")
-    #    x +=1
+   
     
     ###Provide a report at the end of the final scores
     print (f"#The final results are;\n")
