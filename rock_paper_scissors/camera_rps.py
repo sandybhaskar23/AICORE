@@ -144,7 +144,7 @@ class rps:
             self.get_winner()
 
             #check values to see if they equal 3. Time constraint still in place
-            if 28 in self.overall_winner.values():
+            if 3 in self.overall_winner.values():
                 break
             
             
