@@ -6,46 +6,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 import time
-
 '''
-driver = webdriver.Edge() 
-URL = "https://www.zoopla.co.uk/new-homes/property/london/?q=London&results_sort=newest_listings&search_source=new-homes&page_size=25&pn=1&view_type=list"
-driver.get(URL)
-time.sleep(2) # Wait a couple of seconds, so the website doesn't suspect you are a bot
-try:
-    driver.switch_to_frame('gdpr-consent-notice') # This is the id of the frame
-    accept_cookies_button = driver.find_element(by=By.XPATH, value='//*[@id="save"]')
-    accept_cookies_button.click()
+Creates a basic scraper for  TP53 the guardian of the genome.  The selenium driver reads the 1st page and scrolls till it captures all the cards
 
-except AttributeError: # If you have the latest version of Selenium, the code above won't run because the "switch_to_frame" is deprecated
-    driver.switch_to.frame('gdpr-consent-notice') # This is the id of the frame
-    accept_cookies_button = driver.find_element(by=By.XPATH, value='//*[@id="save"]')
-    accept_cookies_button.click()
+Next steps are to follow links and extract further text and images
 
-except:
-    pass
-time.sleep(2)
-dict_properties = {'Link' : [] , 'Price': [], 'Address': [], 'Bedrooms': []}
-house_property = driver.find_element(by=By.XPATH, value='//*[@id="listing_62009695"]') # Change this xpath with the xpath the current page has in their properties
 
-a_tag = house_property.find_element(by=By.TAG_NAME, value='a')
 
-link = a_tag.get_attribute('href')
-print(link)
-dict_properties['link'].append(link)
-price = house_property.find_element(by=By.XPATH, value='//*[@data-testid="listing-price"]').text
-print(price)
-dict_properties['Price'].append(price)
-address = house_property.find_element(by=By.XPATH, value='//*[@data-testid="listing-description"]').text
-print(address)
-dict_properties['Address'].append(address)
-bedrooms = house_property.find_element(by=By.XPATH, value='//p[@class="css-r8a2xt-Text eczcs4p0"]').text
-print(bedrooms)
-dict_properties['Bedrooms'].append(bedrooms)
-#div_tag = house_property.find_element(by=By.XPATH, value='//div[@data-testid="truncated_text_container"]')
-#does not exist or equlivent even ->> span_tag = div_tag.find_element(by=By.XPATH, value='.//span')
-#description = span_tag.text
-#print(description)
 '''
 
 class GuardianScarper:
@@ -54,28 +21,30 @@ class GuardianScarper:
     def __init__(self,URL):
         self.summary_det = {}
         self.link_list =[]
+        self.URL = URL
 
 
     def load_and_accept_cookies(self):
         
-        #Open Zoopla and accept the cookies
+        #Open mycancer genome and accept the cookies
         
         #Returns
         ##-------
         #driver: webdriver.Chrome
-        #   This driver is already in the Zoopla webpage
+        #  
+        self.driver = webdriver.Edge() 
         
-        driver = webdriver.Edge() 
+        self.driver.get(self.URL)
+        self.scroll_down()
         
-        driver.get(URL)
         time.sleep(3) 
         ##get driver to wait 10 seconds
         delay = 10
         try:
-            WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="gdpr-consent-notice"]')))
+            WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="gdpr-consent-notice"]')))
             print("Frame Ready!")
-            driver.switch_to.frame('gdpr-consent-notice')
-            accept_cookies_button = WebDriverWait(driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="save"]')))
+            self.driver.switch_to.frame('gdpr-consent-notice')
+            accept_cookies_button = WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="save"]')))
             print("Accept Cookies Button Ready!")
             accept_cookies_button.click()
             time.sleep(1)
@@ -86,12 +55,9 @@ class GuardianScarper:
         except:
             pass
 
-        return driver  # If there is no cookies button, we won't find it, so we can pass
-    #element = driver.find_element(By.ID, 'sb_form_q')
-    #element.send_keys('WebDriver')
-    #element.submit()
+        
 
-    def get_links(self, driver):
+    def get_links(self):
         '''
         Returns a list with all the links in the current page
         Parameters
@@ -105,7 +71,7 @@ class GuardianScarper:
             A list with all the links in the page
         '''
         ##has to be class directly parent of rest of listings
-        tp53_container = driver.find_element(by=By.XPATH, value='//div[@class="small-up-1 medium-up-2 large-up-2 offset-2 columns"]')
+        tp53_container = self.driver.find_element(by=By.XPATH, value='//div[@class="small-up-1 medium-up-2 large-up-2 offset-2 columns"]')
 
         
         tp53_list = tp53_container.find_elements(by=By.XPATH, value='//div[@class="card-section"]')
@@ -118,17 +84,16 @@ class GuardianScarper:
             print ('start')
             print (link)
             self.link_list.append(link)
-            chunks = tp53_property.text.split('\n')
-                
+            ###get card details while here
+            chunks = tp53_property.text.split('\n')     
+            ##store in case I forget           
             self.summary_det[chunks[0]] ={'link':link}
             ###convert rest in list into dictionary
             res_dct = {chunks[i].split(':')[0]: chunks[i].split(':')[-1] for i in range(1, len(chunks))}
             
             self.summary_det[chunks[0]].update(res_dct)
-            print(self.summary_det)
+            print(self.summary_det)                  
             
-            print (chunks)
-            #span_tag = tp53_property.find_element(by=By.XPATH, value='//span[@class="title-case"]')
             ###get the inner text encapsulated as a react text. 
            
             ###tidy up this function it does not parse the data efficiently 
@@ -191,41 +156,60 @@ class GuardianScarper:
         
         #print(link_list)
         #time.sleep(30)
-    
+
+    def scroll_down(self):
+        self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+
+
+    def get_drug_name(self, big_list):
+
+
+        for lnk in big_list:
+            self.driver.get(lnk)
+
+
+            #layout_container = self.driver.find_elements(by=By.XPATH, value='//div[@class=small-12 columns"]')    
+        
+            #plan = layout_container.find_elements(by=By.XPATH, value='./div')
+
+        ##big list a list data structure    
+
+
+
+
+
+
 
 def deepmine(URL):
 
-    guardscap= GuardianScarper(URL)
+    guardscap= GuardianScarper(URL)  
+    guardscap.load_and_accept_cookies()
+    
 
-  
-    driver = guardscap.load_and_accept_cookies()
-    driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+
+
+
     big_list = []
     for i in range(1): # The first 5 pages only
         #I am only human
         
-        big_list.extend(guardscap.get_links(driver)) # Call the function we just created and extend the big list with the returned list
+        big_list.extend(guardscap.get_links()) # Call the function we just created and extend the big list with the returned list
         ## TODO: Click the next button. Don't forget to use sleeps, so the website doesn't suspect
         #print (big_list)
-        print(f'There are {len(big_list)} tp53 so far')
+        print(f'There are {len(big_list)} tp53 groups so far')
         #nextpage = driver.find_element(by=By.XPATH, value='//div[@class="scroller-button"]')
         #nextpage.click()
         time.sleep(3)
 
+    ##pack the list back to guadian let it handle it
+    guardscap.get_drug_name(big_list)
+
         
 
 
-    for prop_link in big_list:
-        ## TODO: Visit all the links, and extract the data. Don't forget to use sleeps, so the website doesn't suspect
-        #pass # This pass should be removed once the code is complete
-        #for prop_link in big_list:
-        time.sleep(10)
-        print (prop_link)
-        driver.get(prop_link)
-        ##make sure only one element otherwise returns list with no objects only
-        ##this is in each listing and requires daily updates.  the css name changes routinely
-        #layout_container = driver.find_element(by=By.XPATH, value='//*[@class="c-PJLV c-PJLV-ideupcC-css"]')
-        layout_container = driver.find_element(by=By.XPATH, value='//div[@data-testid="listing-summary-details"]')    
+    for tp53_link in big_list:
+        
+        layout_container = tp53_link.find_element(by=By.XPATH, value='//div[@class=small-12 columns"]')    
         print(layout_container)
         plan = layout_container.find_elements(by=By.XPATH, value='./div')
 
