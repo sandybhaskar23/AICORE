@@ -1,3 +1,4 @@
+from select import select
 from turtle import title
 from attr import attrib
 from selenium import webdriver
@@ -6,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 import time
+import uuid
 '''
 Creates a basic scraper for  TP53 the guardian of the genome.  The selenium driver reads the 1st page and scrolls till it captures all the cards
 
@@ -19,22 +21,26 @@ class GuardianScarper:
 
 
     def __init__(self,URL):
-        self.summary_det = {}
+           
+        self.driver = webdriver.Edge() 
+        self.driver.get(URL)
+        ##list 
+        self.image_links = []
         self.link_list =[]
-        self.URL = URL
+        self.clintrials_link =[]
+        ##get v4 uuid
+        self.get_uuid()
+        ##build the data
+        self.summary_det={}
+        
+
 
 
     def load_and_accept_cookies(self):
         
         #Open mycancer genome and accept the cookies
+       
         
-        #Returns
-        ##-------
-        #driver: webdriver.Chrome
-        #  
-        self.driver = webdriver.Edge() 
-        
-        self.driver.get(self.URL)
         self.scroll_down()
         
         time.sleep(3) 
@@ -71,36 +77,31 @@ class GuardianScarper:
             A list with all the links in the page
         '''
         ##has to be class directly parent of rest of listings
-        tp53_container = self.driver.find_element(by=By.XPATH, value='//div[@class="small-up-1 medium-up-2 large-up-2 offset-2 columns"]')
-
-        
+        ##needto be agnostic to nuance naming changes                                   cards small-up-1 medium-up-2 large-up-2 columns
+        tp53_container = self.driver.find_element(by=By.XPATH, value="//div[contains(@class,'small-up-1 medium-up-2 large-up-2')]")
+        #input[contains(@id,'id')]
         tp53_list = tp53_container.find_elements(by=By.XPATH, value='//div[@class="card-section"]')
 
         for tp53_property in tp53_list:
             a_tag = tp53_property.find_element(by=By.TAG_NAME, value='a')
             link = a_tag.get_attribute('href')
-            cardtitle = tp53_property.find_element(by=By.TAG_NAME, value='h5')
-            card_title = cardtitle.get_attribute('title')
-            print ('start')
-            print (link)
+            #cardtitle = tp53_property.find_element(by=By.TAG_NAME, value='h5')
+            #card_title = cardtitle.get_attribute('title')
+            #print ('start')
+            #print (link)
             self.link_list.append(link)
             ###get card details while here
             chunks = tp53_property.text.split('\n')     
-            ##store in case I forget           
-            self.summary_det[chunks[0]] ={'link':link}
+            ##store in case I forget                       
+            self.summary_det[chunks[0]] = {'link':link, 'uuid':self.uuid}
             ###convert rest in list into dictionary
             res_dct = {chunks[i].split(':')[0]: chunks[i].split(':')[-1] for i in range(1, len(chunks))}
             
             self.summary_det[chunks[0]].update(res_dct)
-            print(self.summary_det)                  
-            
-            ###get the inner text encapsulated as a react text. 
-           
-            ###tidy up this function it does not parse the data efficiently 
-            #self.get_summary(tp53_property,card_title)
-            
+            #print(self.summary_det)                
+
         print(f'There are {len(self.link_list)} properties in this page')
-        
+        ###needs to be returned to the function calling this class method
         return self.link_list
 
 
@@ -122,38 +123,26 @@ class GuardianScarper:
         tp53_list = tp53_div.find_elements(by=By.XPATH, value='./p')
         ##tidy up naming
         tp53p_list = tp53_container.find_elements(by=By.XPATH, value='./p')
-    
-        for tp53_prop in tp53_list:
-
-            
+        summary_det = {}
+        for tp53_prop in tp53_list:            
             ###get the key for this 1st div
             innertext = tp53_prop.text
             ###add to dictionary
             span_tag, inner_text = innertext.split(':')    
-            self.summary_det[card_title] = {span_tag : inner_text }
-           # self.summary_det[card_title] = {span_tag : inner_text }
+            self.summary_det[card_title] = {span_tag : inner_text }           
             #print (inner_text)
             #print(span_tag.text)
 
         ###need to get the p tags now            
         for tp53p_prop in tp53p_list:
            
-            print ('p-body')
-            ###get the key for this 1st div
-            #spanp_tag = tp53p_property.find_element(by=By.XPATH, value='//span[@class="title-case"]')
-        
+            #print ('p-body')       
             ###get the inner text encapsulated as a react text. 
-            #inner_text = tp53p_property.find_element(by=By.XPATH, value='./p').text
             innertext= tp53p_prop.text
             ###add to dictionary
             span_tag, inner_text = innertext.split(':')    
             self.summary_det[card_title] = {span_tag : inner_text }
-            print (inner_text)
-            #print(spanp_tag.text)
-            print('end p-body')
-
-        tp53_property = None
-        
+                 
         #print(link_list)
         #time.sleep(30)
 
@@ -161,18 +150,62 @@ class GuardianScarper:
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
 
 
-    def get_drug_name(self, big_list):
-
+    def get_link_details(self, big_list):    
 
         for lnk in big_list:
+            ##now in the card details i.e TP53 nonsense ...
             self.driver.get(lnk)
+            ##in this case there is no images bar the logo and pathway need to traverse links to get them
+            ###there is only one pathway map therefore do not store muliple times
+            self.get_image()
+            #print (lnk)
+            try:
+                clinical_trials = self.driver.find_element(by=By.PARTIAL_LINK_TEXT, value = 'View Clinical Trials')               
+                self.clintrials_link.append(clinical_trials.get_attribute('href'))    
+                #print(clintrials_link)
+            except:
+                ###if not present then not an issue not all variance has clinical trials
+                continue
+        ##make unique
+        self.clintrials_link = list(set(self.clintrials_link))            
 
+            ###now get the clinical trials details. 
+        self.get_clinical_trial_details()
 
-            #layout_container = self.driver.find_elements(by=By.XPATH, value='//div[@class=small-12 columns"]')    
+    
+
+    def get_clinical_trial_details(self):
+
+        print('clinical trials')
+        #print (self.clintrials_link)
+        for cln in self.clintrials_link:
+            #print (cln)
+            self.driver.get(cln)
+            self.scroll_down()
+            time.sleep(4)
+            #print (self.driver.page_source)
+            ##reuse
+            self.get_links()
+            
+
+    def get_image(self):
+        ##logo
+        ##html class name. 
+        #htclass_name = ['nav-bar show-for-medium','associated-pathways']
+        htimage = self.driver.find_elements(by=By.TAG_NAME, value = 'img')
+        imlnk = []
+        for clsname in htimage:
+            #print (clsname.get_attribute('src'))
+            #store the links. 
+            self.image_links.append(clsname.get_attribute('src'))
+            
+        ##make list unique
+        self.image_links = list(set(self.image_links))    
         
-            #plan = layout_container.find_elements(by=By.XPATH, value='./div')
+    def get_uuid(self):
+        self.uuid = uuid.uuid4()
 
-        ##big list a list data structure    
+
 
 
 
@@ -184,17 +217,13 @@ def deepmine(URL):
 
     guardscap= GuardianScarper(URL)  
     guardscap.load_and_accept_cookies()
-    
-
-
-
 
     big_list = []
     for i in range(1): # The first 5 pages only
         #I am only human
         
         big_list.extend(guardscap.get_links()) # Call the function we just created and extend the big list with the returned list
-        ## TODO: Click the next button. Don't forget to use sleeps, so the website doesn't suspect
+        
         #print (big_list)
         print(f'There are {len(big_list)} tp53 groups so far')
         #nextpage = driver.find_element(by=By.XPATH, value='//div[@class="scroller-button"]')
@@ -202,10 +231,13 @@ def deepmine(URL):
         time.sleep(3)
 
     ##pack the list back to guadian let it handle it
-    guardscap.get_drug_name(big_list)
+    guardscap.get_link_details(big_list)
 
+    print (guardscap.summary_det)
+
+    guardscap.driver.quit()
         
-
+'''
 
     for tp53_link in big_list:
         
@@ -230,9 +262,9 @@ def deepmine(URL):
                 continue   
             print (p_tag)  
                 
+'''
 
-
-    driver.quit()
+        
 
 
 if __name__ == '__main__':
