@@ -11,7 +11,7 @@ Output
 Dumps data using implicit pathways  ../../sandbox/DC_env.  A v4 uuid folder is created with below structure
 
 Dir:uuid ------> file:data.json 
-         ------> Dir:Images ------> file:*png
+Dir:uuid ------> Dir:Images ------> file:*png
 
 
 
