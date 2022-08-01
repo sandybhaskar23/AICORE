@@ -10,13 +10,9 @@ Output
 
 Dumps data using implicit pathways  ../../sandbox/DC_env.  A v4 uuid folder is created with below structure
 
-uuid ------------------------
-        |                   |
-        |                   |
-    f:data.json           D:Images ----------
-                                            |
-                                            |
-                                        f:*png
+Dir:uuid ------> file:data.json 
+         ------> Dir:Images ------> file:*png
+
 
 
 This tool uses Selenium as a main component for mining the data.  
