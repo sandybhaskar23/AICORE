@@ -8,10 +8,14 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 import time
 import uuid
+import json
+from pathlib import Path
+import urllib.request 
+
 '''
 Creates a basic scraper for  TP53 the guardian of the genome.  The selenium driver reads the 1st page and scrolls till it captures all the cards
 
-Next steps are to follow links and extract further text and images
+Next steps are to merge uuid to self.summary_det
 
 
 
@@ -32,14 +36,14 @@ class GuardianScarper:
         self.get_uuid()
         ##build the data
         self.summary_det={}
+        self.summary_det['uuid'] = self.uuid
         
 
 
 
     def load_and_accept_cookies(self):
         
-        #Open mycancer genome and accept the cookies
-       
+        #Open mycancer genome and accept the cookies      
         
         self.scroll_down()
         
@@ -93,7 +97,7 @@ class GuardianScarper:
             ###get card details while here
             chunks = tp53_property.text.split('\n')     
             ##store in case I forget                       
-            self.summary_det[chunks[0]] = {'link':link, 'uuid':self.uuid}
+            self.summary_det[chunks[0]] = {'link':link}
             ###convert rest in list into dictionary
             res_dct = {chunks[i].split(':')[0]: chunks[i].split(':')[-1] for i in range(1, len(chunks))}
             
@@ -200,12 +204,33 @@ class GuardianScarper:
             self.image_links.append(clsname.get_attribute('src'))
             
         ##make list unique
-        self.image_links = list(set(self.image_links))    
+        self.image_links = list(set(self.image_links))   
+
+
+
+    def download_images(self):
+
+        self.get_path()
+        print (self.p)
+        imgdir = Path(f"{self.p}\images")
+        imgdir.mkdir(parents=True, exist_ok=True)    
+
+        for i, img  in enumerate(self.image_links):
+          
+            fimage = (img.split('/')[-1]).replace('.png','')
+
+            print (img)
+            urllib.request.urlretrieve(img,(f"{imgdir}\{fimage}_{i}.png"))     
         
     def get_uuid(self):
-        self.uuid = uuid.uuid4()
+        self.uuid = str(uuid.uuid4())
 
+    def get_path(self):
 
+        self.p = Path(f"..\..\sandbox\DC_env\{self.summary_det['uuid']}")
+        self.p.mkdir(parents=True, exist_ok=True)
+
+        return self.p 
 
 
 
@@ -214,6 +239,10 @@ class GuardianScarper:
 
 
 def deepmine(URL):
+
+    ##get the json file ready
+
+
 
     guardscap= GuardianScarper(URL)  
     guardscap.load_and_accept_cookies()
@@ -230,10 +259,21 @@ def deepmine(URL):
         #nextpage.click()
         time.sleep(3)
 
-    ##pack the list back to guadian let it handle it
+    ##pack the list back to guardian let it handle it
     guardscap.get_link_details(big_list)
 
-    print (guardscap.summary_det)
+
+    ##dump this data to v4 uuid folder
+    p = guardscap.get_path()  
+    
+    with (p / 'data.json').open('w') as opened_file:          
+          json.dump(guardscap.summary_det,opened_file)
+
+
+    ##download the images
+    guardscap.download_images()
+
+
 
     guardscap.driver.quit()
         
