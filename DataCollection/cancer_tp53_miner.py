@@ -12,13 +12,8 @@ import json
 from pathlib import Path
 import urllib.request 
 
-'''
-Creates a basic scraper for  TP53 the guardian of the genome.  The selenium driver reads the 1st page and scrolls till it captures all the cards
-
-Next steps are to merge uuid to self.summary_det
-
-
-
+''' Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
+    Data and images are extracted to local storage as json and png
 '''
 
 class GuardianScarper:
