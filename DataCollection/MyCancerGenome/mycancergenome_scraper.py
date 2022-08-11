@@ -4,7 +4,7 @@ from pathlib import Path
 import time
 import json
 import urllib.request 
-import webscraper
+from MyCancerGenome  import webscraper
 
 """ Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
     Data and images are extracted to local storage as json and png
