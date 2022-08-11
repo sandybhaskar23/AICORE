@@ -1,20 +1,18 @@
-from select import select
-from turtle import title
-from attr import attrib
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
+from pathlib import Path
 import time
 import uuid
 import json
-from pathlib import Path
 import urllib.request 
 
-''' Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
+
+""" Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
     Data and images are extracted to local storage as json and png
-'''
+"""
 
 class GuardianScarper:
 
@@ -23,6 +21,8 @@ class GuardianScarper:
            
         self.driver = webdriver.Edge() 
         self.driver.get(URL)
+        ##call class 
+        self.WS = WebScraper()
         ##list 
         self.image_links = []
         self.link_list =[]
@@ -70,14 +70,12 @@ class GuardianScarper:
         except TimeoutException:
             print("Loading took too much time! to be expected no cookes at this website")
             ###there are no cookies consent request for this website
-            pass
-        except:
-            pass
+               
 
         
 
-    def get_links(self):
-        ''' Finds the href links in web pages
+    def get_links(self, val='small-up-1 medium-up-2 large-up-2')-> list:
+        """ Finds the href links in web pages
             Args:
                 driver: webdriver.Chrome
                 The driver that contains information about the current page
@@ -91,18 +89,18 @@ class GuardianScarper:
                     A list with all the links in the page
                 summary_det
                     Stored extracted data
-        '''
+        """
         ##has to be class directly parent of rest of listings
         ##need to be agnostic to nuance naming changes                               
-        tp53_container = self.driver.find_element(by=By.XPATH, value="//div[contains(@class,'small-up-1 medium-up-2 large-up-2')]")
+        tp53_container = self.driver.find_element(by=By.XPATH, value=f"//div[contains(@class,'{val}')]")
         #input[contains(@id,'id')]
         tp53_list = tp53_container.find_elements(by=By.XPATH, value='//div[@class="card-section"]')
 
         for tp53_property in tp53_list:
             a_tag = tp53_property.find_element(by=By.TAG_NAME, value='a')
             link = a_tag.get_attribute('href')
-                #print ('start')
-            #print (link)
+       
+           
             self.link_list.append(link)
             ###get card details while here
             chunks = tp53_property.text.split('\n')     
@@ -121,12 +119,11 @@ class GuardianScarper:
 
 
     def get_summary(self, tp53_property,card_title):
-        ''' Get summary details from each card.  
+        """ Get summary details from each card.  
             Each card holds variant coorindate details
 
             Args:
                 driver              : webdriver.Chrome
-                tp53_list (list)    : Elements of p tag from html
                 tp53p_list (list)   : Elements of p tag from html
                 innertext (str)     : The values from elements of tp53_list and tp53p_list
                 span_tag (str)      : 1st index values of split from innertext
@@ -136,7 +133,7 @@ class GuardianScarper:
             Returns:
                 summary_det
                     Stored extracted data
-        '''
+        """
 
 
          ##has to be class directly parent of rest of listings
@@ -145,7 +142,7 @@ class GuardianScarper:
         tp53_list = tp53_div.find_elements(by=By.XPATH, value='./p')
         ##tidy up naming = based on structure of tp53_container need a diff handle
         tp53p_list = tp53_container.find_elements(by=By.XPATH, value='./p')
-        summary_det = {}
+        
         for tp53_prop in tp53_list:            
             ###get the key for this 1st div
             innertext = tp53_prop.text
@@ -163,11 +160,11 @@ class GuardianScarper:
             span_tag, inner_text = innertext.split(':')    
             self.summary_det[card_title] = {span_tag : inner_text }
                  
-        #print(link_list)
+    
         #time.sleep(30)
 
     def scroll_down(self):
-        """Ensures HTML is fully loaded to  allow the whole page to be mined
+        """ Ensures HTML is fully loaded to  allow the whole page to be mined
 
             Args:
                 driver: webdriver.Chrome scrolldown function
@@ -181,7 +178,7 @@ class GuardianScarper:
 
 
     def get_link_details(self, big_list):    
-        """Extracts all the details of links i.e: disease, drugs from the aggregated stored links dictionary
+        """ Extracts all the details of links i.e: disease, drugs from the aggregated stored links dictionary
         
             Args: 
                 driver                              : webdriver.Chrome get function for link
@@ -261,7 +258,7 @@ class GuardianScarper:
         ##html class name. 
         #htclass_name = ['nav-bar show-for-medium','associated-pathways']
         htimage = self.driver.find_elements(by=By.TAG_NAME, value = 'img')
-        imlnk = []
+        
         for clsname in htimage:
             #print (clsname.get_attribute('src'))
             #store the links. 
@@ -278,12 +275,12 @@ class GuardianScarper:
             Not many images on the website. Pages visited only have logos
 
             Args:
-                get_path (Method)   : Get the global data store relative path and create it, if it does not exist
+                get_path (Method)   : Get the global data store relative path and created it, if it does not exist
                 imgdir (str)        : Define a subfolder images within the global relative data store directory
 
         
             Returns:
-                Results in the images being store in the images folder which is relative to where the script is triggered. 
+                Results in the images being stored in the images folder which is relative to where the script is triggered. 
         
         """
         self.get_path()
@@ -370,7 +367,7 @@ def deepmine(URL):
     ##dump this data to v4 uuid folder
     p = guardscap.get_path()  
     
-    ##writte the dictioary data into a json file
+    ##write the dictioary data into a json file
     with (p / 'data.json').open('w') as opened_file:          
           json.dump(guardscap.summary_det,opened_file)
 
