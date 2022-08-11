@@ -152,11 +152,11 @@ class GuardianScarper:
         self.clintrials_link = list(set(self.clintrials_link))            
 
             ###now get the clinical trials details. 
-        self.get_clinical_trial_details()
+        self.get_clinical_trial_details(self.clintrials_link)
 
     
 
-    def get_clinical_trial_details(self):
+    def get_clinical_trial_details(self,clintrials_link = ["https://www.mycancergenome.org/content/clinical_trials/#alterations=TP53%20Mutation"]):
 
         """ Extracts all the details of clinical trials and call the get_links
 
@@ -173,7 +173,7 @@ class GuardianScarper:
 
         print('clinical trials')
         #print (self.clintrials_link)
-        for cln in self.clintrials_link:
+        for cln in clintrials_link:
             #print (cln)
             self.driver.get(cln)
             self.WS.scroll_down()
