@@ -1,5 +1,6 @@
+from MyCancerGenome import mycancergenome_scraper
 import unittest
-import mycancergenome_scraper
+
 '''
 Unit test for mycancergenome mining software. 
 
@@ -18,6 +19,8 @@ class MyCancerGenomeTestCases(unittest.TestCase):
        
 
         self.assertGreater(len(set_of_links),0)
+        self.assertTrue(type(set_of_links) == list)
+
 
     def test_link_details(self):
       
@@ -28,12 +31,16 @@ class MyCancerGenomeTestCases(unittest.TestCase):
         ###test that we have a uniq list still
         print (mcs.clintrials_link)
         self.assertEqual(len(mcs.clintrials_link),len(set(mcs.clintrials_link)))
+        self.assertTrue(type(mcs.clintrials_link) == list)
 
     def test_get_clinical_trial_details(self):
         mcs = mycancergenome_scraper.GuardianScarper()
         mcs.WS.load_and_accept_cookies()
         mcs.get_clinical_trial_details()
+
+        self.assertTrue(type(mcs.summary_det) == dict)
         ##standard  key should be retuned for default link
         self.assertIn('AflacLL1901 (CHOA-AML)',mcs.summary_det.keys())
+        
 
 unittest.main(argv=[''], verbosity=2, exit=False)
