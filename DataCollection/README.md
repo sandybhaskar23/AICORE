@@ -45,6 +45,7 @@ This will write a data.json file based on the below relative path  from where yo
 
 ..\..\sandbox\DC_env\uuid(file)
 
-
+This can also be download from pypi at; 
+https://pypi.org/project/TP53-clinical-trials/
 
 
