@@ -81,7 +81,7 @@ class GuardianScarper:
             chunks = tp53_property.text.split('\n')                 
 
             ###convert rest in list into dictionary
-            _res_dct = {chunks[i].split(':')[0]: chunks[i].split(':')[-1]  for i in range(1, len(chunks))}
+            _res_dct = {chunks[i].split(':')[0]: chunks[i].split(':')[-1]  for i in range(1, len(chunks)) if ':' in chunks[i]}
             ##1st condition is based on sub links now being called. This will now store the sub information under the initial group key
             if key is not None:
                 tri = type(self.summary_det[key][self.cct])
