@@ -61,6 +61,7 @@ class WebScraper:
         """
         ##make sure the html is fully loaded
         self.driver.execute_script("window.scrollTo(0,document.body.scrollHeight)")
+        time.sleep(1)
 
     def get_uuid(self):
         """ Using uuid v4 class to define unique tags for data extractions
