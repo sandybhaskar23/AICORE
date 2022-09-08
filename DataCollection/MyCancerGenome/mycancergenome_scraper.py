@@ -1,4 +1,6 @@
 from __future__ import unicode_literals
+from distutils.log import error
+from telnetlib import DET
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -10,6 +12,8 @@ import urllib.request
 import boto3
 import webscraper
 import pandas as  pd
+import uuid
+import mcg_db
 """ Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
     Data and images are extracted to local storage as json and png
 """
@@ -19,7 +23,7 @@ class GuardianScarper:
 
     def __init__(self,url ="https://www.mycancergenome.org/content/biomarkers/#search=TP53"):
            
-        self.driver = webdriver.Edge() 
+        self.driver = webdriver.Chrome() 
         self.driver.get(url)
         ##call class 
         self.WS = webscraper.WebScraper(self.driver)
@@ -30,7 +34,8 @@ class GuardianScarper:
         self.WS.get_uuid()
         ##build the data
         self.summary_det={}
-        self.summary_det['uuid'] = self.WS.uuid
+        ##no longer needed since using uuid5 for actual links 
+        #self.summary_det['uuid'] = self.WS.uuid
         ##aws handle
         self.s3 = boto3.client('s3')
 
@@ -66,14 +71,16 @@ class GuardianScarper:
         tp53_list = tp53_container.find_elements(by=By.XPATH, value='//div[@class="card-section"]')
        
         print(f'Current Url is: {self.driver.current_url}')
-        if key is not None:
+        if key is not None:            
             self.summary_det[key][self.cct] = {}
 
         for tp53_property in tp53_list:
             a_tag = tp53_property.find_element(by=By.TAG_NAME, value='a')
             link = a_tag.get_attribute('href')
-            print('in links')
-            print(link)
+            #print('in links')
+            #print(link)
+            uniqueid = str(uuid.uuid5(uuid.NAMESPACE_DNS,link))
+            #print (uniqueid)
             h5_tag = tp53_property.find_element(by=By.TAG_NAME, value='h5')
             det = h5_tag.get_attribute('title')
             
@@ -81,21 +88,21 @@ class GuardianScarper:
             chunks = tp53_property.text.split('\n')                 
 
             ###convert rest in list into dictionary
-            _res_dct = {chunks[i].split(':')[0]: chunks[i].split(':')[-1]  for i in range(1, len(chunks)) if ':' in chunks[i]}
+            _res_dct = {chunks[i].split(':')[0].replace(' ','_'): chunks[i].split(':')[-1]  for i in range(1, len(chunks)) if ':' in chunks[i]}
             ##1st condition is based on sub links now being called. This will now store the sub information under the initial group key
             if key is not None:
                 tri = type(self.summary_det[key][self.cct])
-                print(tri)
+                #print(tri)
                 ##create a nested dictionary. This happens after main key has created therefore update is enough
-                self.summary_det[key][self.cct].update({ det : {'link':link}})
+                self.summary_det[key][self.cct].update({ uniqueid : {'Link':link, 'ClinicalTrialDescription': det, 'Id': key}})
                 #self.summary_det[key][self.cct][det].update({'link':link})
-                self.summary_det[key][self.cct][det].update(_res_dct)                
+                self.summary_det[key][self.cct][uniqueid].update(_res_dct)                
             else:
                 ##store infor from 1st group of links and their relevant information                     
-                self.summary_det[det] = {'link':link}
-                self.summary_det[det].update(_res_dct)
-
-            self.link_list.append(f'{det}:{link}')                           
+                self.summary_det[uniqueid] = {'Link':link, 'Biomarkers' : det }
+                self.summary_det[uniqueid].update(_res_dct)
+            #print(uniqueid)
+            self.link_list.append(f'{uniqueid}:{link}')                           
             
         ##high degree of redundancy       
         self.link_list = list(set(self.link_list))
@@ -165,18 +172,18 @@ class GuardianScarper:
         #print (self.clintrials_link)
         for cln in clintrials_link:
             k,cln = cln.split(':',1)
-            print(k)
+            #print(k)
             
-            print('In clinical tials details')
-            print (cln)
+            print('In clinical trials details')
+            #print (cln)
             #print (self.summary_det)
             ##need this to allow driver time to load the actual page. Misdirection technique
             self.driver.get('https://www.mycancergenome.org/content/biomarkers/#search=TP53')
-            time.sleep(4)
+            time.sleep(2)
             self.driver.get(cln)
-            self.driver.implicitly_wait(8)       
+            self.driver.implicitly_wait(1)       
             self.WS.scroll_down()
-            time.sleep(4)
+            time.sleep(1)
             #print (self.driver.page_source)
             ##reuse
             self.get_links(key=k)
@@ -221,7 +228,7 @@ class GuardianScarper:
         """
         ##define the pathway for storing dtaa in it relative pathway
         ##makes it more compatible for any directory structure
-        self.p = Path(f"..\..\sandbox\DC_env\{self.summary_det['uuid']}")
+        self.p = Path(f"..\..\sandbox\DC_env\{str(self.WS.uuid)}")
         self.p.mkdir(parents=True, exist_ok=True)
 
         return self.p 
@@ -273,14 +280,15 @@ def deepmine(url="https://www.mycancergenome.org/content/biomarkers/#search=TP53
           json.dump(guardscap.summary_det,opened_file)
 
     df = pd.DataFrame(guardscap.summary_det)
-    df.to_csv(r'mycancergenome_data.csv',  mode='a')
-    print(df)
+    df.transpose().to_csv(r'mycancergenome_data.csv',  mode='a')
+    mcg_db.McsInterface(guardscap.summary_det, guardscap.cct).run()
+    #print(df)
 
     guardscap.s3.upload_file(f'{p}/data.json' ,'mycancergenome', 'data.json')
     ##download the images
     guardscap.download_images()
 
-    ##neatly close the selnium edge driver
+    ##neatly close the selnium chrome driver
     guardscap.driver.quit()
         
 
