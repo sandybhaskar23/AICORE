@@ -95,13 +95,19 @@ class WebScraper:
         #htclass_name = ['nav-bar show-for-medium','associated-pathways']
         htimage = driver.find_elements(by=By.TAG_NAME, value = 'img')
         image_links = []
+        _temp_dict ={}
         for clsname in htimage:
             #print (clsname.get_attribute('src'))
             #store the links. 
-            image_links.append(clsname.get_attribute('src'))
-            
+            #image_links.append(clsname.get_attribute('src'))
+            #need to sort this https links are not sorting
+            fimage = (clsname.get_attribute('src').split('/')[-1]).replace('.png','')
+            _temp_dict.update({fimage : clsname.get_attribute('src')})
+
+        _temp_dict = {k: v for k, v in sorted(_temp_dict.items(), key=lambda item: item[1])}
         ##make list unique
-        image_links = list(set(image_links)) 
+        #image_links = list(set(image_links)) 
+        image_links = list(_temp_dict.values())
 
         return image_links 
 
