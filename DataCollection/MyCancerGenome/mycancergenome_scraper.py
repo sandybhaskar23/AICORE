@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 import json
 import urllib.request 
+import botocore
 import boto3
 import webscraper
 import pandas as  pd
@@ -34,10 +35,14 @@ class GuardianScarper:
         self.WS.get_uuid()
         ##build the data
         self.summary_det={}
+        self.subheader=set([])
         ##no longer needed since using uuid5 for actual links 
         #self.summary_det['uuid'] = self.WS.uuid
         ##aws handle
         self.s3 = boto3.client('s3')
+
+        ###open db handle
+        self.mcg_db = mcg_db.McsInterface()
 
         ##global defined key for dict needed for clinical trials details
         self.cct= 'ClinicalTrialsTitle'
@@ -74,13 +79,13 @@ class GuardianScarper:
         if key is not None:            
             self.summary_det[key][self.cct] = {}
 
+
         for tp53_property in tp53_list:
             a_tag = tp53_property.find_element(by=By.TAG_NAME, value='a')
             link = a_tag.get_attribute('href')
-            #print('in links')
-            #print(link)
+
             uniqueid = str(uuid.uuid5(uuid.NAMESPACE_DNS,link))
-            #print (uniqueid)
+          
             h5_tag = tp53_property.find_element(by=By.TAG_NAME, value='h5')
             det = h5_tag.get_attribute('title')
             
@@ -90,15 +95,35 @@ class GuardianScarper:
             ###convert rest in list into dictionary
             _res_dct = {chunks[i].split(':')[0].replace(' ','_'): chunks[i].split(':')[-1]  for i in range(1, len(chunks)) if ':' in chunks[i]}
             ##1st condition is based on sub links now being called. This will now store the sub information under the initial group key
-            if key is not None:
-                tri = type(self.summary_det[key][self.cct])
-                #print(tri)
+            ##if no sublink exists ignore
+            if key is not None and link is not None:
+                ###redo uniqueid becuse the link is in multiple layers
+                ##concat string
+               
+                lnk = link + self.summary_det[key]['Link']       
+                uniqueid = str(uuid.uuid5(uuid.NAMESPACE_DNS,lnk))               
+      
+                dct = { 'Det_id' :uniqueid, 'Link':link, 'Description': det, 'Id': key} | _res_dct                
+   
+                self.subheader = list(dct.keys())
+                dct_val = list(dct.values())
+
+                ##check if data exists
+                if self.mcg_db.check_if_data_exists_by_primary('ClinicalDetails','Det_id',uniqueid) is not None:
+                    continue
                 ##create a nested dictionary. This happens after main key has created therefore update is enough
-                self.summary_det[key][self.cct].update({ uniqueid : {'Link':link, 'ClinicalTrialDescription': det, 'Id': key}})
-                #self.summary_det[key][self.cct][det].update({'link':link})
-                self.summary_det[key][self.cct][uniqueid].update(_res_dct)                
+                if  not isinstance(self.summary_det[key][self.cct],list):
+                    self.summary_det[key][self.cct] =[]
+
+                self.summary_det[key][self.cct].append(dct_val)
+                 
             else:
-                ##store infor from 1st group of links and their relevant information                     
+                ##check data exists
+                if self.mcg_db.check_if_data_exists_by_primary('Biomarkers','Id',uniqueid) is not None:
+                    continue
+
+                ##store infor from 1st group of links and their relevant information  
+                                   
                 self.summary_det[uniqueid] = {'Link':link, 'Biomarkers' : det }
                 self.summary_det[uniqueid].update(_res_dct)
             #print(uniqueid)
@@ -172,11 +197,8 @@ class GuardianScarper:
         #print (self.clintrials_link)
         for cln in clintrials_link:
             k,cln = cln.split(':',1)
-            #print(k)
-            
-            print('In clinical trials details')
-            #print (cln)
-            #print (self.summary_det)
+                       
+           
             ##need this to allow driver time to load the actual page. Misdirection technique
             self.driver.get('https://www.mycancergenome.org/content/biomarkers/#search=TP53')
             time.sleep(2)
@@ -184,7 +206,7 @@ class GuardianScarper:
             self.driver.implicitly_wait(1)       
             self.WS.scroll_down()
             time.sleep(1)
-            #print (self.driver.page_source)
+         
             ##reuse
             self.get_links(key=k)
             
@@ -208,13 +230,29 @@ class GuardianScarper:
         imgdir = Path(f"{self.p}\images")
         imgdir.mkdir(parents=True, exist_ok=True)    
         image_links = self.WS.get_image(self.driver)
+        print(image_links)
         for i, img  in enumerate(image_links):
             ##store the images but rename using index.
             fimage = (img.split('/')[-1]).replace('.png','')       
             urllib.request.urlretrieve(img,(f"{imgdir}\{fimage}_{i}.png"))
-            self.s3.upload_file (f'{imgdir}\{fimage}_{i}.png' ,'mycancergenome' , f'{fimage}_{i}.png')   
+            if self.check_file_exists(f'{fimage}_{i}.png') is None:
+                self.s3.upload_file (f'{imgdir}\{fimage}_{i}.png' ,'mycancergenome' , f'{fimage}_{i}.png')   
         
-   
+    def check_file_exists(self, file=None):
+
+        self.if_file_exist = 1
+
+        try:      
+            print(f'does exist {file}')        
+            self.s3.head_object(Bucket='mycancergenome', Key=file)
+        except botocore.exceptions.ClientError as error:    
+            print('does nto exist')       
+            self.if_file_exist = None
+            # Not found
+        
+        return self.if_file_exist
+
+
     def get_path(self):
         """ Define and make dirs for storing data
 
@@ -255,12 +293,11 @@ def deepmine(url="https://www.mycancergenome.org/content/biomarkers/#search=TP53
 
 
     ##get the json file ready
-
     guardscap= GuardianScarper(url)  
-    guardscap.WS.load_and_accept_cookies()
+    guardscap.WS.load_and_accept_cookies()    
 
     big_list = []
-    for i in range(1): # The first 5 pages only
+    for i in range(1): # The first only, leave it to control for further usage
         #I am only human
         
         big_list.extend(guardscap.get_links()) # Call the function we just created and extend the big list with the returned list
@@ -271,18 +308,22 @@ def deepmine(url="https://www.mycancergenome.org/content/biomarkers/#search=TP53
     ##pack the list back to guardian let it handle it
     guardscap.get_link_details(big_list)
 
-
     ##dump this data to v4 uuid folder
     p = guardscap.get_path()  
     
     ##write the dictioary data into a json file
+    ##do not need this now it is going into db but part of requirements 
     with (p / 'data.json').open('w') as opened_file:          
           json.dump(guardscap.summary_det,opened_file)
-
+    ##do not need this now it is going into db but part of requirements 
     df = pd.DataFrame(guardscap.summary_det)
     df.transpose().to_csv(r'mycancergenome_data.csv',  mode='a')
-    mcg_db.McsInterface(guardscap.summary_det, guardscap.cct).run()
-    #print(df)
+   
+    if guardscap.summary_det:
+        mcg_db.McsInterface(guardscap.summary_det,guardscap.subheader, guardscap.cct).run()
+    else:
+        print("No new data to insert")
+
 
     guardscap.s3.upload_file(f'{p}/data.json' ,'mycancergenome', 'data.json')
     ##download the images
