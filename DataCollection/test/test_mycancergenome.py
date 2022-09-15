@@ -1,5 +1,9 @@
-from MyCancerGenome import mycancergenome_scraper
+import sys
 import unittest
+
+sys.path.append('C:\\Users\\Sandy Bhaskar\\OneDrive\\Documents\\HSST\\AICORE\\AICORE\\DataCollection')
+sys.path.append('C:\\Users\\Sandy Bhaskar\\OneDrive\\Documents\HSST\\AICORE\\AICORE\\DataCollection\\MyCancerGenome')
+from MyCancerGenome import mycancergenome_scraper
 
 '''
 Unit test for mycancergenome mining software. 
@@ -19,7 +23,8 @@ class MyCancerGenomeTestCases(unittest.TestCase):
        
 
         self.assertGreater(len(set_of_links),0)
-        self.assertTrue(type(set_of_links) == list)
+        self.assertTrue(type(set_of_links) == list) 
+        self.assertEqual(len(set_of_links),0)
 
 
     def test_link_details(self):
@@ -39,7 +44,7 @@ class MyCancerGenomeTestCases(unittest.TestCase):
         mcs.get_clinical_trial_details()
 
         self.assertTrue(type(mcs.summary_det) == dict)
-        ##standard  key should be retuned for default link
+        ##standard  key should be returned for default link ONLY if nomore data to scrape
         self.assertIn('AflacLL1901 (CHOA-AML)',mcs.summary_det.keys())
         
 
