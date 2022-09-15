@@ -1,11 +1,10 @@
 from asyncio.windows_events import NULL
-from importlib.metadata import metadata
-from typing import Dict
-from uuid import UUID, uuid5
-from sqlalchemy import *
+from mcgconnection import TpConnection
+from sqlalchemy import Column, Table , VARCHAR, INTEGER , ForeignKey
 from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import UUID
-from mcgconnection import TpConnection
+from typing import Dict
+from uuid import UUID
 import pandas as pd
 
 
@@ -27,21 +26,47 @@ class McsInterface:
 
 
     def run(self):
+        
+        """ Runs McsInterface methods in below order:
+            check_table_exis
+            _create_table
+            write_to_tables
+
+            Args: None except what is past to the class instantiation 
+            
+           Creates two tables in database 
+            
+            Returns: 
+                    Nothing                
+        
+        """
 
         self.check_table_exist()
-        self.create_table()
+        self._create_table()
         self.write_to_tables()    
 
     def check_table_exist(self, table = None) -> None:
+        """Checks if a table exist
 
+        Args: Table name
+
+        Returns:
+                None if no table exist     
+
+        """
         if table not in self.tables:
             return None           
         
         
 
-    def create_table(self)-> None:
-        '''
-       
+    def _create_table(self)-> None:
+        '''Uses sqlalchemy meta engine to create table model and then create them
+
+        Args: 
+            No args given
+
+        Return:
+            Checks if table Biomarkers and ClinicalDetails exist if not creates models and table in AWS system
 
         '''
         check = self.check_table_exist('Biomarkers')
@@ -79,31 +104,52 @@ class McsInterface:
                 self.meta.create_all(self.db)
     
 
-    def check_if_data_exists_by_primary(self,tble,col,val):
-        self.no_data = 1
-        stmt = f'select "{col}" from "{tble}" where "{col}" = \'{val}\' '
-       
-        results = self.db.execute(stmt).fetchall()
+    def check_if_data_exists_by_primary(self,tble,col=None,val=None):
+        """Checks if data in a table exist
 
-        if results is None:
-            self.no_data = None
+        Args:
+            tble = Table name
+            col = table column 
+            val = the data being chedcked
 
-        return self.no_data
+        Returns:
+            'None' if no data exists
+            '1' if data exists
+    
+        """
+        
+        ##initialise return value 
+        no_data = 1
+        if col is not None:
+            stmt = f'select "{col}" from "{tble}" where "{col}" = \'{val}\' '
+        
+            results = self.db.execute(stmt).fetchall()
+
+            if results is None:
+                self.no_data = None
+
+        return no_data
 
         
 
     def write_to_tables(self) -> None:
 
         '''
-        Use panda to sql but need to first deal with columns
+        Uses pandas to insert data into SQL.Flatten data for subtable before insert
         Pandas cannot resolve complex data structures
+
+        Args:
+            None given uses args passed to class at instantiation
+        Returns:
+            Nothing
+
         '''
 
         ##data is already a dataframe from 
         df = pd.DataFrame(self.data).transpose()   
         df.reset_index(inplace=True)
-        df = df.rename(columns = {'index':'Id'})
-  
+        df = df.rename(columns = {'index':'Id'}) 
+
         # only one group has pathways and is is uninformative 
         df.pop('Pathways')
         df.pop(self.slice)
@@ -112,9 +158,7 @@ class McsInterface:
         df.fillna(0, inplace=True, downcast='infer')   
         #seed the data      
         df.to_sql('Biomarkers',self.db,if_exists='append',index=False)
-        print('Nearly<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>>>>>>>')
-
-
+        
         ###now write subtable 
         self.subtable=[]
         self.subtable.append(self.subheader)
