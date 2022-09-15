@@ -4,6 +4,7 @@ from pathlib import Path
 from telnetlib import DET
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 import botocore
 import boto3
 import json
@@ -23,7 +24,9 @@ class GuardianScarper:
 
     def __init__(self,url ="https://www.mycancergenome.org/content/biomarkers/#search=TP53"):
            
-        self.driver = webdriver.Chrome() 
+        chrome_options = Options()   
+        chrome_options.add_argument("--headless")
+        self.driver = webdriver.Chrome(options=chrome_options) 
         self.driver.get(url)
         ##call class 
         self.WS = webscraper.WebScraper(self.driver)
@@ -159,7 +162,7 @@ class GuardianScarper:
                 clinical_trials = self.driver.find_element(by=By.PARTIAL_LINK_TEXT, value = 'View Clinical Trials')               
                 self.clintrials_link.append(f"{k}:{clinical_trials.get_attribute('href')}")    
                 #print(clintrials_link)
-            except error:
+            except:
                 ###if not present then not an issue not all variance has clinical trials
                 print(f'moving on {error}')
                 continue
@@ -235,11 +238,11 @@ class GuardianScarper:
 
         self.if_file_exist = 1
 
-        try:      
-            print(f'does exist {file}')        
+        try:                   
+            #looks up bucket to find file
             self.s3.head_object(Bucket='mycancergenome', Key=file)
-        except botocore.exceptions.ClientError as error:    
-            print('does nto exist')       
+        except botocore.exceptions.ClientError as error: 
+            #boto3 errors if no file found              
             self.if_file_exist = None
             # Not found
         
