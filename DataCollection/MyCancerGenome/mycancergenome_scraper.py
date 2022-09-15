@@ -1,20 +1,19 @@
 from __future__ import unicode_literals
 from distutils.log import error
+from pathlib import Path
 from telnetlib import DET
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from pathlib import Path
-import time
-import json
-import urllib.request 
 import botocore
 import boto3
-import webscraper
-import pandas as  pd
-import uuid
+import json
 import mcg_db
+import pandas as  pd
+import time
+import urllib.request 
+import uuid
+import webscraper
+
 """ Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
     Data and images are extracted to local storage as json and png
 """
@@ -66,11 +65,7 @@ class GuardianScarper:
                     Stored extracted data
         """
         ##has to be class directly parent of rest of listings
-        ##need to be agnostic to nuance naming changes   
-        #  WebDriverWait(self.driver, delay).until(EC.presence_of_element_located((By.XPATH, '//*[@id="gdpr-consent-notice"]')))    
-        #WebDriverWait(self.driver.implicitly_wait(),18).until(EC.visibility_of_element_located((By.XPATH,"//div[contains(@class,'{val}')]"))) < does not work  
-        #self.driver.implicitly_wait(18) < -does not resolve issue
-        #self.driver.page_source    < does resolve issue                  
+        ##need to be agnostic to nuance naming changes                    
         tp53_container = self.driver.find_element(by=By.XPATH, value=f"//div[contains(@class,'{val}')]")
         #input[contains(@id,'id')]
         tp53_list = tp53_container.find_elements(by=By.XPATH, value='//div[@class="card-section"]')
@@ -97,9 +92,8 @@ class GuardianScarper:
             ##1st condition is based on sub links now being called. This will now store the sub information under the initial group key
             ##if no sublink exists ignore
             if key is not None and link is not None:
-                ###redo uniqueid becuse the link is in multiple layers
-                ##concat string
-               
+                ###redo uniqueid because the link is in multiple layers
+                ##concat string               
                 lnk = link + self.summary_det[key]['Link']       
                 uniqueid = str(uuid.uuid5(uuid.NAMESPACE_DNS,lnk))               
       
@@ -122,8 +116,7 @@ class GuardianScarper:
                 if self.mcg_db.check_if_data_exists_by_primary('Biomarkers','Id',uniqueid) is not None:
                     continue
 
-                ##store infor from 1st group of links and their relevant information  
-                                   
+                ##store info from 1st group of links and their relevant information                                     
                 self.summary_det[uniqueid] = {'Link':link, 'Biomarkers' : det }
                 self.summary_det[uniqueid].update(_res_dct)
             #print(uniqueid)
@@ -137,7 +130,7 @@ class GuardianScarper:
         return self.link_list
    
 
-    def get_link_details(self, big_list):    
+    def get_link_details(self, big_list)-> None:    
         """ Extracts all the details of links i.e: disease, drugs from the aggregated stored links dictionary
         
             Args: 
@@ -166,9 +159,9 @@ class GuardianScarper:
                 clinical_trials = self.driver.find_element(by=By.PARTIAL_LINK_TEXT, value = 'View Clinical Trials')               
                 self.clintrials_link.append(f"{k}:{clinical_trials.get_attribute('href')}")    
                 #print(clintrials_link)
-            except:
+            except error:
                 ###if not present then not an issue not all variance has clinical trials
-                print('moving on')
+                print(f'moving on {error}')
                 continue
         ##make unique
         self.clintrials_link = list(set(self.clintrials_link))            
@@ -178,7 +171,7 @@ class GuardianScarper:
 
     
 
-    def get_clinical_trial_details(self,clintrials_link = ["https://www.mycancergenome.org/content/clinical_trials/#alterations=TP53%20Mutation"]):
+    def get_clinical_trial_details(self,clintrials_link = ["https://www.mycancergenome.org/content/clinical_trials/#alterations=TP53%20Mutation"]) -> None:
 
         """ Extracts all the details of clinical trials and call the get_links
 
@@ -212,7 +205,7 @@ class GuardianScarper:
             
    
 
-    def download_images(self):
+    def download_images(self) -> None:
 
         """ Method to download images and rename based on order in list
             Not many images on the website. Pages visited only have logos
@@ -238,7 +231,7 @@ class GuardianScarper:
             if self.check_file_exists(f'{fimage}_{i}.png') is None:
                 self.s3.upload_file (f'{imgdir}\{fimage}_{i}.png' ,'mycancergenome' , f'{fimage}_{i}.png')   
         
-    def check_file_exists(self, file=None):
+    def check_file_exists(self, file=None)-> None:
 
         self.if_file_exist = 1
 
@@ -253,7 +246,7 @@ class GuardianScarper:
         return self.if_file_exist
 
 
-    def get_path(self):
+    def get_path(self)-> None:
         """ Define and make dirs for storing data
 
             Args:
