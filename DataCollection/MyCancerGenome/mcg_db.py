@@ -2,7 +2,6 @@ from mcgconnection import TpConnection
 from sqlalchemy import Column, Table , VARCHAR, INTEGER , ForeignKey
 from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import UUID
-from typing import Dict
 from uuid import UUID
 import pandas as pd
 
