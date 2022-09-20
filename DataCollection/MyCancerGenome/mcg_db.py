@@ -1,4 +1,3 @@
-from asyncio.windows_events import NULL
 from mcgconnection import TpConnection
 from sqlalchemy import Column, Table , VARCHAR, INTEGER , ForeignKey
 from sqlalchemy.schema import MetaData
