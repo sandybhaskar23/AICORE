@@ -9,5 +9,5 @@ setup(
     author='Sanjeev Bhaskar',
     license= 'MIT',
     packages=find_packages(),
-    install_requires= ['Selenium', 'uuid' ,'time', 'urllib.request','MyCancerGenome'],
+    install_requires= ['Selenium', 'uuid' ,'time', 'urllib.request','MyCancerGenome','boto3','botocore','webscraper','sqlalchemy'],
 )
