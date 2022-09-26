@@ -48,4 +48,17 @@ This will write a data.json file based on the below relative path  from where yo
 This can also be download from pypi at; 
 https://pypi.org/project/TP53-clinical-trials/
 
+Unit Test:
+
+Uses python unittest class to assert  MyCancerGenome methods.
+
+###
+
+
+Software fully dockerised and available from Docker Hub on request.
+This tool run has been fully tested on an EC2 instance utilising AWS RDS and S3 for storing data and files, respectively.  
+
+Usage: 
+docker run  repositoryname/my-cancer-genome:mycancergenome
+
 
