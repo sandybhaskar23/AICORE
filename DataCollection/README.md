@@ -62,3 +62,15 @@ Usage:
 docker run  repositoryname/my-cancer-genome:mycancergenome
 
 
+Docker container now installed on AWS EC2 instance
+
+Prometheus and Grafana dashboard has been created to monitor docker  'state' and 'load' on the EC2 instance
+Helpful pages for grafana setup is:
+https://www.radishlogic.com/aws/ec2/how-to-install-grafana-on-ec2-amazon-linux-2/ 
+
+Use Grafana home page for more details
+https://grafana.com/grafana/ 
+
+
+
+
