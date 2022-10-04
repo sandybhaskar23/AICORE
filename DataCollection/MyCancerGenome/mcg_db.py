@@ -2,7 +2,6 @@ from mcgconnection import TpConnection
 from sqlalchemy import Column, Table , VARCHAR, INTEGER , ForeignKey
 from sqlalchemy.schema import MetaData
 from sqlalchemy.dialects.postgresql import UUID
-from uuid import UUID
 import pandas as pd
 
 
@@ -17,8 +16,7 @@ class McsInterface:
         self.data ={}
         self.data = data
         self.subheader = subheader
-        ty = type(self.data)
-        print(ty)
+        ty = type(self.data)        
         self.slice = slice
 
 
@@ -37,9 +35,7 @@ class McsInterface:
             Returns: 
                     Nothing                
         
-        """
-
-        self.check_table_exist()
+        """        
         self._create_table()
         self.write_to_tables()    
 
@@ -51,9 +47,12 @@ class McsInterface:
         Returns:
                 None if no table exist     
 
-        """
-        if table not in self.tables:
-            return None           
+        """       
+        if table in self.tables:            
+            return table
+        else:
+            return None
+                   
         
         
 
@@ -67,11 +66,12 @@ class McsInterface:
             Checks if table Biomarkers and ClinicalDetails exist if not creates models and table in AWS system
 
         '''
+        
         check = self.check_table_exist('Biomarkers')
         check_t2 = self.check_table_exist('ClinicalDetails')
 
         if check is None and check_t2 is None :
-        
+                
                 ###write table
                 biomarkers = Table(
                     'Biomarkers',self.meta,
@@ -115,18 +115,25 @@ class McsInterface:
             '1' if data exists
     
         """
+        check = self.check_table_exist(tble)
         
+        ##1st check for tables existence 
+        if check is None:
+            return check
+       
+        ##table exists not make sure col has a value
         ##initialise return value 
-        no_data = 1
+        self.no_data = None
         if col is not None:
+           
             stmt = f'select "{col}" from "{tble}" where "{col}" = \'{val}\' '
         
             results = self.db.execute(stmt).fetchall()
-
-            if results is None:
-                self.no_data = None
-
-        return no_data
+            print (f"Data exist {results}")
+            if results is not None:
+                self.no_data = results
+        
+        return self.no_data
 
         
 
