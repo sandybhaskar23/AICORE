@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from distutils.log import error
 from pathlib import Path
-from telnetlib import DET
+from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -23,8 +23,10 @@ class GuardianScarper:
 
 
     def __init__(self,url ="https://www.mycancergenome.org/content/biomarkers/#search=TP53"):
-           
-        chrome_options = Options()   
+        
+        #service = Service(executable_path="C:\\WebDriver\\bin\\chromedriver.exe")
+        chrome_options = Options() 
+        chrome_options.add_argument('--no-sandbox')  
         chrome_options.add_argument("--headless")
         self.driver = webdriver.Chrome(options=chrome_options) 
         self.driver.get(url)
@@ -81,7 +83,7 @@ class GuardianScarper:
         for tp53_property in tp53_list:
             a_tag = tp53_property.find_element(by=By.TAG_NAME, value='a')
             link = a_tag.get_attribute('href')
-
+            
             uniqueid = str(uuid.uuid5(uuid.NAMESPACE_DNS,link))
           
             h5_tag = tp53_property.find_element(by=By.TAG_NAME, value='h5')
@@ -89,7 +91,7 @@ class GuardianScarper:
             
             ###get card details while here            
             chunks = tp53_property.text.split('\n')                 
-
+            
             ###convert rest in list into dictionary
             _res_dct = {chunks[i].split(':')[0].replace(' ','_'): chunks[i].split(':')[-1]  for i in range(1, len(chunks)) if ':' in chunks[i]}
             ##1st condition is based on sub links now being called. This will now store the sub information under the initial group key
@@ -101,7 +103,7 @@ class GuardianScarper:
                 uniqueid = str(uuid.uuid5(uuid.NAMESPACE_DNS,lnk))               
       
                 dct = { 'Det_id' :uniqueid, 'Link':link, 'Description': det, 'Id': key} | _res_dct                
-   
+                
                 self.subheader = list(dct.keys())
                 dct_val = list(dct.values())
 
@@ -115,10 +117,10 @@ class GuardianScarper:
                 self.summary_det[key][self.cct].append(dct_val)
                  
             else:
+             
                 ##check data exists
-                if self.mcg_db.check_if_data_exists_by_primary('Biomarkers','Id',uniqueid) is not None:
-                    continue
-
+                if self.mcg_db.check_if_data_exists_by_primary('Biomarkers','Id',uniqueid) is not None:                    
+                    continue             
                 ##store info from 1st group of links and their relevant information                                     
                 self.summary_det[uniqueid] = {'Link':link, 'Biomarkers' : det }
                 self.summary_det[uniqueid].update(_res_dct)
@@ -325,7 +327,7 @@ def deepmine(url="https://www.mycancergenome.org/content/biomarkers/#search=TP53
     ##download the images
     guardscap.download_images()
 
-    ##neatly close the selnium chrome driver
+    ##neatly close the selenium chrome driver
     guardscap.driver.quit()
         
 
