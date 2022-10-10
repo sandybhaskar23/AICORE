@@ -2,11 +2,11 @@ Cancer_tp53_miner - Now deprecated for mycancergenome_scraper.py. See below
 
 This script is designed to extract TP53 biomarker information and current clinical trials and drugs.  
 
-####Usage:
+#### Usage:
 
 cancer_tp53_miner.py
 
-#####Output
+##### Output
 
 Dumps data using implicit pathways  ../../sandbox/DC_env.  A v4 uuid folder is created with below structure
 
@@ -26,7 +26,7 @@ cancer_tp53_miner.py now deprecated - no need to use
     mycancergenome_scraper.py
     test_mycancergenome.py 
 
-#####Install libraries:
+##### Install libraries:
 
 Selenium
 uuid
@@ -37,7 +37,9 @@ also;
 Install pgadmin4
 
 
-###Usage:
+### Usage:
+
+Built for python3.9.12
 
 python mycancergenome_scraper.py 
 
@@ -50,7 +52,7 @@ https://pypi.org/project/TP53-clinical-trials/
 
 Unit Test:
 
-Uses python unittest class to assert  MyCancerGenome methods.
+Uses python unittest class to assert  MyCancerGenome methods.  
 
 
 Software builds tables in postgresql and seeds scapered data.   It will add new data if available. 
@@ -81,7 +83,7 @@ DATABASE=db_name
 aws_access_key_id=KEY  
 aws_secret_access_key=SECRET_KEY  
 
-##Usage:   
+## Usage:   
 docker run  repositoryname/my-cancer-genome:mycancergenome
 
 
