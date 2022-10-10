@@ -5,6 +5,9 @@ from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from os.path import join, dirname
+from pathlib import Path
+from  dotenv import load_dotenv 
 import botocore
 import boto3
 import json
@@ -14,6 +17,8 @@ import time
 import urllib.request 
 import uuid
 import webscraper
+import os
+
 
 """ Creates a scraper for  TP53 the guardian of the genome.  The selenium driver reads the pages and scrolls till it captures all the card details
     Data and images are extracted to local storage as json and png
@@ -24,11 +29,11 @@ class GuardianScarper:
 
     def __init__(self,url ="https://www.mycancergenome.org/content/biomarkers/#search=TP53"):
         
-        #service = Service(executable_path="C:\\WebDriver\\bin\\chromedriver.exe")
+        service = Service(executable_path="C:\\WebDriver\\bin\\chromedriver.exe")
         chrome_options = Options() 
         chrome_options.add_argument('--no-sandbox')  
         chrome_options.add_argument("--headless")
-        self.driver = webdriver.Chrome(options=chrome_options) 
+        self.driver = webdriver.Chrome(options=chrome_options,service=service) 
         self.driver.get(url)
         ##call class 
         self.WS = webscraper.WebScraper(self.driver)
@@ -43,7 +48,14 @@ class GuardianScarper:
         ##no longer needed since using uuid5 for actual links 
         #self.summary_det['uuid'] = self.WS.uuid
         ##aws handle
-        self.s3 = boto3.client('s3')
+        dotenv_path = join(dirname(__file__), '.env')          
+        load_dotenv(dotenv_path)
+        session = boto3.Session(
+            aws_access_key_id=os.getenv('aws_access_key_id'),
+            aws_secret_access_key=os.getenv('aws_secret_access_key')
+            )
+
+        self.s3 = session.client('s3')
 
         ###open db handle
         self.mcg_db = mcg_db.McsInterface()
