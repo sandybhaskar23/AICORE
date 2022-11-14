@@ -66,11 +66,33 @@ def clean_tabular_data(CSV):
     ##write CSV
     dg.data.to_csv("clean_data.csv")
 
+    return dg
 
+def load_airbnb(csv,labl=None):
+
+    
+    dg = clean_tabular_data(csv)
+    features = dg.data.select_dtypes(['float64', 'int64'])
+    #print(features)
+    df_features= pd.DataFrame(features)
+    #print(df_features.columns.values.tolist())
+    ##ensure you use axis =1 for columns header otherwise tries rows
+    labels = df_features[labl]
+    df_features.drop([labl],axis=1, inplace=True)
+    #print(df_features)
+    return (df_features,labels)
+
+    
+    
+
+    
 
 
 if __name__ == "__main__":
 
-    CSV = "tabular_data\listing.csv"
-    clean_tabular_data(CSV)
+    csv = "tabular_data\listing.csv"
+    labl = 'Price_Night'
+
+    ###capture all the features and labels
+    (features,labels) = load_airbnb(csv,labl)
 
