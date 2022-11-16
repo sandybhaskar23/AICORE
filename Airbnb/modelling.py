@@ -17,6 +17,9 @@ def sgd_modelling(csv,labl):
     ###capture all the features and labels
     (X,y) = load_airbnb(csv,labl)
 
+    #standardise datasets
+    X = scale(X)
+    y = scale(y)
     xtrain, xtest, ytrain, ytest = model_selection.train_test_split(X, y, test_size=0.15)
     ###does not like NaN values need to use HistGradientBoostingRegressor() or HistGradientBoostingClassifier()
    
@@ -29,6 +32,7 @@ def sgd_modelling(csv,labl):
 
 
     mse = mean_squared_error(ytest, ypred)
+    #print("ypred",ypred)
     print("MSE: ", mse)
     print("RMSE: ", mse**(1/2.0))
 
