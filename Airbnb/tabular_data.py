@@ -63,8 +63,10 @@ def clean_tabular_data(CSV):
     dg.remove_rows_with_missing_ratings(['Cleanliness_rating','Accuracy_rating','Communication_rating','Location_rating','Check-in_rating','Value_rating'])
     dg.combine_description_strings('Description')
     dg.set_default_feature_values(["guests", "beds", "bathrooms", "bedrooms" ])
+    ##gets rid of unamed colum which apprears from reading csv and writing to func
+    dg.data.drop(dg.data.filter(regex="Unnamed"),axis=1, inplace=True)
     ##write CSV
-    dg.data.to_csv("clean_data.csv")
+    dg.data.to_csv("clean_data.csv",index=False)
 
     return dg
 
