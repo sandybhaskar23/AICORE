@@ -12,6 +12,7 @@ from sklearn.datasets import make_regression
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import scale
 import matplotlib.pyplot as plt 
+import pandas as pd
 
 
 
@@ -19,6 +20,7 @@ class ModellingGridSearch:
 
     def __init__(self):
 
+        self.best_hyper = {}
         self.valid_loss = []
         self.train_split ={}
         self.best_hyp={}
@@ -93,7 +95,7 @@ class ModellingGridSearch:
         for mod in models:
             best_hyp = []
             rmse_loss =[]
-
+            self.data[mod.__class__.__name__] = {}
             for ms in np.nditer(hyp['max_samples']):
                 for ne in np.nditer(hyp['n_estimators']):
 
@@ -109,14 +111,13 @@ class ModellingGridSearch:
                     test_mse = mean_squared_error(ts['ytest'],ytest_pred)
 
                     valrmse_loss=(valid_mse**(1/2.0))
-                    self.data.update(
-                        {mod.__class__.__name__ : {
+                    self.data[mod.__class__.__name__].update( {
                             f"{ms}_{ne}" : {
                             'Validation_MSE_Loss' : valid_mse,
                             'Training_MSE_Loss' : train_mse,
                             'Test_MSE_Loss' : test_mse,
                             'Validation_RMSE_Loss' : valrmse_loss
-                        }}}
+                        }}
                     )
 
                     best_hyp.append(f"{ms}_{ne}" )
@@ -125,9 +126,17 @@ class ModellingGridSearch:
             ##lower the RMSEq the better
             mn_rmse_loss = min(rmse_loss)
             bst_hypeindex = rmse_loss.index(mn_rmse_loss)
-            print(f"Class: {mod}, hyperparameter(mx_smp_n-esti): {best_hyp[bst_hypeindex]}, min RMSE LOSS : {mn_rmse_loss}")
+            #print(f"Class: {mod}, hyperparameter(mx_smp_n-esti): {best_hyp[bst_hypeindex]}, min RMSE LOSS : {mn_rmse_loss}")
             self.best_hyper[mod] = {best_hyp[bst_hypeindex] : mn_rmse_loss}
 
+
+    def pretty_data(self):
+
+        df = pd.DataFrame(self.data)
+        df.to_csv("all_score.csv")
+
+        bstdf = pd.DataFrame(self.best_hyper)
+        print(bstdf)
 
 
         
@@ -141,5 +150,6 @@ if __name__ == "__main__":
     mgs.define_models()
     mgs.hyperparameters()
     mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
+    mgs.pretty_data()
 
 
