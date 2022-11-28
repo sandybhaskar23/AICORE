@@ -123,10 +123,10 @@ class ModellingGridSearch:
                     rmse_loss.append(valrmse_loss)
 
             ##lower the RMSEq the better
-            mx_rmse_loss = min(rmse_loss)
-            bst_hypeindex = rmse_loss.index(mx_rmse_loss)
-            print(f"Class: {mod}, hyperparameter(mx_smp_n-esti): {best_hyp[bst_hypeindex]}, min RMSE LOSS : {mx_rmse_loss}")
-
+            mn_rmse_loss = min(rmse_loss)
+            bst_hypeindex = rmse_loss.index(mn_rmse_loss)
+            print(f"Class: {mod}, hyperparameter(mx_smp_n-esti): {best_hyp[bst_hypeindex]}, min RMSE LOSS : {mn_rmse_loss}")
+            self.best_hyper[mod] = {best_hyp[bst_hypeindex] : mn_rmse_loss}
 
 
 
