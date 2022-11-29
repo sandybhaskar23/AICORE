@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn import datasets, model_selection
 from sklearn.datasets import make_regression
@@ -78,8 +79,28 @@ class ModellingGridSearch:
 
         self.hyparam_dist = {
             'max_samples' : np.array([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]),
-            'n_estimators' : np.array([2,4,8,16,32,64,1024])
+            'n_estimators' : np.array([2,4,8,16,32,64,1024]),
+            'bootstrap' : [True]
         }
+
+    def tune_regression_model_hyperparameters(self,models,train_split=None,hyp=None):
+
+          ##shorthand notation for dict
+        if train_split is not None:
+            ts = self.train_split
+        else:
+            ts = train_split
+
+        for mod in models:
+
+            tuner = GridSearchCV(estimator = mod(), param_grid= hyp)
+            tuner.fit(ts['xtrain'], ts['ytrain'])
+            print(mod)
+            print(tuner.best_params_)
+            print(tuner.best_score_)
+            self.best_hyper[mod] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
+
+
 
     def custom_tune_regression_model_hyperparameters(self,models,train_split=None,hyp=None):
 
@@ -132,8 +153,9 @@ class ModellingGridSearch:
 
     def pretty_data(self):
 
-        df = pd.DataFrame(self.data)
-        df.to_csv("all_score.csv")
+        if self.data is not None:
+            df = pd.DataFrame(self.data)
+            df.to_csv("all_score.csv")
 
         bstdf = pd.DataFrame(self.best_hyper)
         print(bstdf)
@@ -149,7 +171,9 @@ if __name__ == "__main__":
     mgs.sgd_modelling(csv,labl)
     mgs.define_models()
     mgs.hyperparameters()
-    mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
+    #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
+
+    mgs.tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
     mgs.pretty_data()
 
 
