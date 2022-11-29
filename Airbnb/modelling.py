@@ -76,7 +76,6 @@ class ModellingGridSearch:
 
     def hyperparameters(self):
 
-
         self.hyparam_dist = {
             'max_samples' : np.array([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]),
             'n_estimators' : np.array([2,4,8,16,32,64,1024]),
@@ -95,10 +94,10 @@ class ModellingGridSearch:
 
             tuner = GridSearchCV(estimator = mod(), param_grid= hyp)
             tuner.fit(ts['xtrain'], ts['ytrain'])
-            print(mod)
+            print(type(mod()).__name__)
             print(tuner.best_params_)
             print(tuner.best_score_)
-            self.best_hyper[mod] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
+            self.best_hyper[type(mod()).__name__] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
 
 
 
@@ -112,11 +111,12 @@ class ModellingGridSearch:
         else:
             ts = train_split
 
-
+        ##loop through models
         for mod in models:
             best_hyp = []
             rmse_loss =[]
-            self.data[mod.__class__.__name__] = {}
+            self.data[type(mod()).__name__] = {}
+            ##now loop through hyperparameters
             for ms in np.nditer(hyp['max_samples']):
                 for ne in np.nditer(hyp['n_estimators']):
 
@@ -132,7 +132,7 @@ class ModellingGridSearch:
                     test_mse = mean_squared_error(ts['ytest'],ytest_pred)
 
                     valrmse_loss=(valid_mse**(1/2.0))
-                    self.data[mod.__class__.__name__].update( {
+                    self.data[type(mod()).__name__].update( {
                             f"{ms}_{ne}" : {
                             'Validation_MSE_Loss' : valid_mse,
                             'Training_MSE_Loss' : train_mse,
@@ -148,7 +148,7 @@ class ModellingGridSearch:
             mn_rmse_loss = min(rmse_loss)
             bst_hypeindex = rmse_loss.index(mn_rmse_loss)
             #print(f"Class: {mod}, hyperparameter(mx_smp_n-esti): {best_hyp[bst_hypeindex]}, min RMSE LOSS : {mn_rmse_loss}")
-            self.best_hyper[mod] = {best_hyp[bst_hypeindex] : mn_rmse_loss}
+            self.best_hyper[type(mod()).__name__] = {best_hyp[bst_hypeindex] : mn_rmse_loss}
 
 
     def pretty_data(self):
