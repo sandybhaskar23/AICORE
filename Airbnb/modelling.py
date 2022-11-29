@@ -1,21 +1,34 @@
 from tabular_data import load_airbnb
-import numpy as np
-from sklearn.linear_model import SGDRegressor
 from sklearn.ensemble import BaggingRegressor
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import ExtraTreesRegressor
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import LogisticRegression
-from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestRegressor
-from sklearn import datasets, model_selection
-from sklearn.datasets import make_regression
+from sklearn import model_selection
+from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import scale
+from pathlib import Path
+
+import joblib
+import json
 import matplotlib.pyplot as plt 
+import numpy as np
 import pandas as pd
 
 
+
+class NumpyEncoder(json.JSONEncoder):
+    """ Special json encoder for numpy types """
+    def default(self, obj):
+        if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
+                            np.int16, np.int32, np.int64, np.uint8,
+                            np.uint16, np.uint32, np.uint64)):
+            return int(obj)
+        elif isinstance(obj, (np.float_, np.float16, np.float32,
+                              np.float64)):
+            return float(obj)
+        elif isinstance(obj, (np.ndarray,)):
+            return obj.tolist()
+        return json.JSONEncoder.default(self, obj)
 
 class ModellingGridSearch:
 
@@ -99,6 +112,8 @@ class ModellingGridSearch:
             print(tuner.best_score_)
             self.best_hyper[type(mod()).__name__] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
 
+            self.save_model(type(mod()).__name__, tuner ,self.hyparam_dist,self.best_hyper)
+
 
 
     def custom_tune_regression_model_hyperparameters(self,models,train_split=None,hyp=None):
@@ -154,11 +169,38 @@ class ModellingGridSearch:
     def pretty_data(self):
 
         if self.data is not None:
-            df = pd.DataFrame(self.data)
-            df.to_csv("all_score.csv")
+            self.df = pd.DataFrame(self.data)
+            #df.to_csv("all_score.csv")
 
-        bstdf = pd.DataFrame(self.best_hyper)
-        print(bstdf)
+        self.bstdf = pd.DataFrame(self.best_hyper)
+        print(self.bstdf)
+
+    def get_path(self,nme):
+
+        modir = Path(f'models/regression/{nme}')
+        modir.mkdir(parents=True,exist_ok=True)
+
+        return modir
+
+    def save_model(self,nme, model,hyp, metric):
+                
+        modir = self.get_path(nme)
+             
+        ##write model details to file
+        joblib.dump(model,f"{modir}\\{nme}.joblib")
+        ###jsonify the parameters
+        
+        jpath = modir/ "hyperparameters.json"
+        ##numpyencoder deal with json.dumps limitations todealing with numpy arrays
+        jpath.write_text(json.dumps(hyp,cls=NumpyEncoder))
+
+        ##try data frame could use json.dumps
+        hyperparam = pd.DataFrame(metric)
+        hyperparam.to_json(f"{modir}\metrics.json")
+
+        #self.pretty_data()
+        
+
 
 
         
@@ -174,6 +216,6 @@ if __name__ == "__main__":
     #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
 
     mgs.tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
-    mgs.pretty_data()
+    #mgs.pretty_data()
 
 
