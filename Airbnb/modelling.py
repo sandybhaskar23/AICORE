@@ -2,6 +2,8 @@ from tabular_data import load_airbnb
 from sklearn.ensemble import BaggingRegressor
 from sklearn.ensemble import ExtraTreesRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 from sklearn import model_selection
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import mean_squared_error
@@ -79,23 +81,45 @@ class ModellingGridSearch:
 
     def define_models(self):
 
-        self.models = [
+        self.hyperparameters()
+
+        self.models = {
        
-            ExtraTreesRegressor,
-            BaggingRegressor,
-            RandomForestRegressor,
+            ExtraTreesRegressor : self.hyparamtyp1_dist ,
+            BaggingRegressor : self.hyparamtyp1_dist ,
+            RandomForestRegressor : self.hyparamtyp1_dist ,
+            GradientBoostingRegressor : self.hyparamtyp2_dist ,
+            DecisionTreeRegressor : self.hyparamtyp3_dist
               
-        ]
+        }
 
     def hyperparameters(self):
 
-        self.hyparam_dist = {
-            'max_samples' : np.array([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]),
-            'n_estimators' : np.array([2,4,8,16,32,64,1024]),
+        ##set some standard value where ML algo have overlapping parameters name
+        ##note sharing same name does not denote same behaviour across each model
+        n_estimators = np.array([2,4,8,16,32,64,1024])
+        learning_rate = np.array([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+        max_samples  =  np.array([0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
+        max_depth = np.array([1,2,3,4,5,6,7,8,9,10])
+
+        self.hyparamtyp1_dist = {
+            'max_samples' : max_samples,
+            'n_estimators' : n_estimators,
             'bootstrap' : [True]
         }
 
-    def tune_regression_model_hyperparameters(self,models,train_split=None,hyp=None):
+        self.hyparamtyp2_dist={
+            'n_estimators' : n_estimators,
+            'learning_rate' : learning_rate
+        }
+
+        self.hyparamtyp3_dist = {
+            'max_depth' : max_depth            
+        }
+
+
+
+    def tune_regression_model_hyperparameters(self,models,train_split=None):
 
           ##shorthand notation for dict
         if train_split is not None:
@@ -105,14 +129,16 @@ class ModellingGridSearch:
 
         for mod in models:
 
-            tuner = GridSearchCV(estimator = mod(), param_grid= hyp)
+            tuner = GridSearchCV(estimator = mod(), param_grid= models[mod])
             tuner.fit(ts['xtrain'], ts['ytrain'])
             print(type(mod()).__name__)
             print(tuner.best_params_)
             print(tuner.best_score_)
-            self.best_hyper[type(mod()).__name__] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
-
-            self.save_model(type(mod()).__name__, tuner ,self.hyparam_dist,self.best_hyper)
+            sep = '_'
+            print(sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_)))
+            #self.best_hyper[type(mod()).__name__] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
+            self.best_hyper[type(mod()).__name__] = {sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_)) : tuner.best_score_}
+            self.save_model(type(mod()).__name__, tuner ,models[mod],self.best_hyper)
 
 
 
@@ -202,6 +228,18 @@ class ModellingGridSearch:
         
 
 
+def evaluate_all_models(csv,labl):
+
+    mgs = ModellingGridSearch()
+    mgs.sgd_modelling(csv,labl)
+    mgs.define_models()
+    #mgs.hyperparameters()
+    #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
+
+    mgs.tune_regression_model_hyperparameters(mgs.models,mgs.train_split)
+    #mgs.pretty_data()
+
+
 
         
 
@@ -209,13 +247,6 @@ if __name__ == "__main__":
 
     csv = "tabular_data\listing.csv"
     labl = 'Price_Night'
-    mgs = ModellingGridSearch()
-    mgs.sgd_modelling(csv,labl)
-    mgs.define_models()
-    mgs.hyperparameters()
-    #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
 
-    mgs.tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
-    #mgs.pretty_data()
-
-
+    evaluate_all_models(csv,labl)
+    
