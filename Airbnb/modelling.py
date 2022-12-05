@@ -41,6 +41,8 @@ class ModellingGridSearch:
         self.train_split ={}
         self.best_hyp={}
         self.data  = {}
+        self.select_model= np.empty((3,0))
+        self.model_selected ={}
         
 
     def sgd_modelling(self,csv,labl):
@@ -126,6 +128,7 @@ class ModellingGridSearch:
             ts = self.train_split
         else:
             ts = train_split
+        
 
         for mod in models:
 
@@ -134,11 +137,22 @@ class ModellingGridSearch:
             print(type(mod()).__name__)
             print(tuner.best_params_)
             print(tuner.best_score_)
+            ####join the param to fomr a unique key
             sep = '_'
-            print(sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_)))
-            #self.best_hyper[type(mod()).__name__] = {f"{tuner.best_params_['max_samples']}_{tuner.best_params_['n_estimators']}": tuner.best_score_ }
-            self.best_hyper[type(mod()).__name__] = {sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_)) : tuner.best_score_}
-            self.save_model(type(mod()).__name__, tuner ,models[mod],self.best_hyper)
+            _k = sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_))     
+            self.best_hyper[type(mod()).__name__] = {_k : tuner.best_score_}
+
+            columns = np.array([[type(mod()).__name__,_k,tuner.best_score_]])
+            print(columns.ndim, columns.shape)
+            print(self.select_model.ndim, self.select_model.shape)
+            self.select_model = np.append(self.select_model, columns.transpose(),axis=1)
+            #self.select_model = np.append(self.select_model, [['type(mod()).__name__'],[_k],[tuner.best_score_]])
+
+            #self.select_model['bst_model'].append(type(mod()).__name__)
+            #self.select_model['best_hyp'].append(_k)
+            #self.select_model['rmse_loss'].append(tuner.best_score_)
+            self.save_model(type(mod()).__name__,tuner,models[mod],self.best_hyper)
+
 
 
 
@@ -199,7 +213,7 @@ class ModellingGridSearch:
             #df.to_csv("all_score.csv")
 
         self.bstdf = pd.DataFrame(self.best_hyper)
-        print(self.bstdf)
+        #print(self.bstdf)
 
     def get_path(self,nme):
 
@@ -225,6 +239,19 @@ class ModellingGridSearch:
         hyperparam.to_json(f"{modir}\metrics.json")
 
         #self.pretty_data()
+    def find_best_model(self):
+
+        print(self.select_model)
+
+
+        ##lower the RMSEq the better
+        mn_rmse_loss = min(self.select_model[-1])
+        bst_hypeindex = np.where(self.select_model[-1]==mn_rmse_loss)[0][0]  #self.select_model[-1].index(mn_rmse_loss)
+        print(mn_rmse_loss,bst_hypeindex)
+        self.model_selected[self.select_model[0][bst_hypeindex]] = {self.select_model[1][bst_hypeindex] : mn_rmse_loss}
+
+        return(self.model_selected)
+            
         
 
 
@@ -233,11 +260,13 @@ def evaluate_all_models(csv,labl):
     mgs = ModellingGridSearch()
     mgs.sgd_modelling(csv,labl)
     mgs.define_models()
-    #mgs.hyperparameters()
+  
     #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
 
     mgs.tune_regression_model_hyperparameters(mgs.models,mgs.train_split)
-    #mgs.pretty_data()
+    
+    return(mgs.find_best_model())
+    
 
 
 
@@ -248,5 +277,7 @@ if __name__ == "__main__":
     csv = "tabular_data\listing.csv"
     labl = 'Price_Night'
 
-    evaluate_all_models(csv,labl)
+    bst_mod = evaluate_all_models(csv,labl)
+
+    print(bst_mod)??now document
     
