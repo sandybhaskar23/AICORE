@@ -146,11 +146,7 @@ class ModellingGridSearch:
             print(columns.ndim, columns.shape)
             print(self.select_model.ndim, self.select_model.shape)
             self.select_model = np.append(self.select_model, columns.transpose(),axis=1)
-            #self.select_model = np.append(self.select_model, [['type(mod()).__name__'],[_k],[tuner.best_score_]])
 
-            #self.select_model['bst_model'].append(type(mod()).__name__)
-            #self.select_model['best_hyp'].append(_k)
-            #self.select_model['rmse_loss'].append(tuner.best_score_)
             self.save_model(type(mod()).__name__,tuner,models[mod],self.best_hyper)
 
 
@@ -248,7 +244,11 @@ class ModellingGridSearch:
         mn_rmse_loss = min(self.select_model[-1])
         bst_hypeindex = np.where(self.select_model[-1]==mn_rmse_loss)[0][0]  #self.select_model[-1].index(mn_rmse_loss)
         print(mn_rmse_loss,bst_hypeindex)
-        self.model_selected[self.select_model[0][bst_hypeindex]] = {self.select_model[1][bst_hypeindex] : mn_rmse_loss}
+        self.model_selected = {
+                'Best_model' : self.select_model[0][bst_hypeindex],
+                'Parameters' : self.select_model[1][bst_hypeindex],
+                'RMSE' : mn_rmse_loss
+                }
 
         return(self.model_selected)
             
@@ -278,6 +278,7 @@ if __name__ == "__main__":
     labl = 'Price_Night'
 
     bst_mod = evaluate_all_models(csv,labl)
-
-    print(bst_mod)??now document
+    for key,val in bst_mod.items():
+        print(f"{key} : {val}")
+    
     
