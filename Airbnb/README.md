@@ -19,7 +19,7 @@ These two tools will allow for the application of machine learning algorithmns t
 
 #modelling.py
 
-Software slices the data into validation, training and test setto predict price per night. The validation set is run against the 5 below regression models using GridSearchCV.
+Software slices the data into validation, training and test set to predict price per night. The validation set is run against the 5 below regression models using GridSearchCV.
             ExtraTreesRegressor ,
             BaggingRegressor ,
             RandomForestRegressor,
@@ -34,5 +34,5 @@ The best model is then selected and then reported back.
 
 History:
 
-There is a method which allows custome tuning  are than the GridSearchCV wrapper class.   Cannot be accessed via command line but the way the ModellingGridSearch class is called will help.
+There is a method which allows custom tuning  rather than use the GridSearchCV wrapper class.   Cannot be accessed via command line but the way the ModellingGridSearch class is called will allow access to it. See evaluate_all_models() more order of calling
 
