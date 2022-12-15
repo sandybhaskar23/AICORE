@@ -1,13 +1,17 @@
 from tabular_data import load_airbnb
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn import model_selection
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, precision_score, recall_score, f1_score,accuracy_score
 from sklearn.preprocessing import scale
 from pathlib import Path
 
-from sklearn.preprocessing import LabelEncoder,OneHotEncoder,OrdinalEncoder
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import OneHotEncoder
+
 
 import joblib
 import json
@@ -40,7 +44,7 @@ class ModellingGridSearch:
         self.train_split ={}
         self.best_hyp={}
         self.data  = {}
-        self.select_model= np.empty((3,0))
+        self.select_model= np.empty((11,0))
         self.model_selected ={}
         
 
@@ -90,7 +94,10 @@ class ModellingGridSearch:
         self.models = {
        
             LogisticRegression : self.hyparamtyp1_dist ,
-   
+            RandomForestClassifier :self.hyparamtyp2_dist,
+            KNeighborsClassifier :self.hyparamtyp3_dist ,
+            MLPClassifier : self.hyparamtyp4_dist,
+            AdaBoostClassifier : self.hyparamtyp5_dist  
               
         }
 
@@ -101,6 +108,9 @@ class ModellingGridSearch:
         regularisation = np.array([0.1,0.2,1,2,3,4],dtype=float)
         penalty = np.array(['l1','l2'])
         warm_start = [True]
+        n_estimators = np.array([2,4,8,16,32,64,1024])
+        max_depth = np.array([1,2,3,4,5,6,7,8,9,10])
+        n_neighbors = np.arange(1,21)
 
         ##chnage solver form default due to L1 penalty being seen in data
         ##chnage max_iter from default since more were needed from 100->1000->5000
@@ -110,15 +120,38 @@ class ModellingGridSearch:
             'penalty' : penalty,
             'warm_start' : warm_start,
             'max_iter' : [1000,5000],
-            'solver' : ['liblinear']
-             
+            'solver' : ['liblinear']       
 
         }
 
+        self.hyparamtyp2_dist = {
+            'n_estimators' : n_estimators,
+            'max_depth' : max_depth,
+            'bootstrap' : [True]
+        }
+
+        self.hyparamtyp3_dist = {
+            'n_neighbors' : n_neighbors,
+            'metric' : ['euclidean', 'cityblock']
+        }
+
+        self.hyparamtyp4_dist= {
+            'solver' : ['sgd'],
+            'learning_rate':['adaptive'],
+            'hidden_layer_sizes': [(100,), (50,100,), (50,75,100,)],
+            'activation': ['relu', 'tanh', 'logistic', 'identity'],
+            'max_iter' : [500,1000,5000]
+        }
+
+        self.hyparamtyp5_dist = {
+            'n_estimators' : n_estimators,
+            'learning_rate' : [1,2,3,4,5],
+            }
 
 
 
-    def tune_regression_model_hyperparameters(self,models,train_split=None):
+
+    def tune_classification_model_hyperparameters(self,models,train_split=None):
 
           ##shorthand notation for dict
         if train_split is not None:
@@ -134,12 +167,21 @@ class ModellingGridSearch:
             print(type(mod()).__name__)
             print(tuner.best_params_)
             print(tuner.best_score_)
-            ####join the param to fomr a unique key
+
+            ##get precision recal,F1 and accuracy scores for training and test 
+            y_pred = tuner.predict(ts['xtrain'])
+            y_pred_test = tuner.predict(ts['xtest'])
+            p,r,f1,ac = self.get_prfac(ts['ytrain'],y_pred,'micro')
+            pt,rt,f1t,act = self.get_prfac(ts['ytest'],y_pred_test,'micro')
+
+            print(f"Precision:{p}\tRecall:{r}\tF1:{f1}\tAccuracy:{ac}")
+            
+            ####join the param to form a unique key
             sep = '_'
             _k = sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_))     
             self.best_hyper[type(mod()).__name__] = {_k : tuner.best_score_}
 
-            columns = np.array([[type(mod()).__name__,_k,tuner.best_score_]])
+            columns = np.array([[type(mod()).__name__,_k,p,r,f1,ac,pt,rt,f1t,act,tuner.best_score_]])
             #print(columns.ndim, columns.shape)
             #print(self.select_model.ndim, self.select_model.shape)
             self.select_model = np.append(self.select_model, columns.transpose(),axis=1)
@@ -147,58 +189,15 @@ class ModellingGridSearch:
             self.save_model(type(mod()).__name__,tuner,models[mod],self.best_hyper)
 
 
+    def get_prfac(self, ytrain, y_pred, avg='micro'):
+            p = precision_score(ytrain, y_pred, average=avg, zero_division=0)
+            r = recall_score(ytrain, y_pred, average=avg,zero_division=0)
+            f1 = f1_score(ytrain, y_pred, average=avg,zero_division=0)
+            ac = accuracy_score(ytrain, y_pred)
+        
+            return(p,r,f1,ac)
 
-
-    def custom_tune_regression_model_hyperparameters(self,models,train_split=None,hyp=None):
-
-
-        np.random.seed(2)
-        ##shorthand notation for dict
-        if train_split is not None:
-            ts = self.train_split
-        else:
-            ts = train_split
-
-        ##loop through models
-        for mod in models:
-            best_hyp = []
-            rmse_loss =[]
-            self.data[type(mod()).__name__] = {}
-            ##now loop through hyperparameters
-            for ms in np.nditer(hyp['max_samples']):
-                for ne in np.nditer(hyp['n_estimators']):
-
-                    est = mod(n_estimators = int(ne), max_samples = float(ms),bootstrap=True).fit(ts['xtrain'], ts['ytrain'])
-
-                    ytrain_pred = est.predict(ts['xtrain'])
-                    yvalid_pred = est.predict(ts['xvalid'])
-                    ytest_pred = est.predict(ts['xtest'])
-
-                    ##works out the loss of function score    
-                    train_mse = mean_squared_error(ts['ytrain'],ytrain_pred)
-                    valid_mse = mean_squared_error(ts['yvalid'],yvalid_pred)
-                    test_mse = mean_squared_error(ts['ytest'],ytest_pred)
-
-                    valrmse_loss=(valid_mse**(1/2.0))
-                    self.data[type(mod()).__name__].update( {
-                            f"{ms}_{ne}" : {
-                            'Validation_MSE_Loss' : valid_mse,
-                            'Training_MSE_Loss' : train_mse,
-                            'Test_MSE_Loss' : test_mse,
-                            'Validation_RMSE_Loss' : valrmse_loss
-                        }}
-                    )
-
-                    best_hyp.append(f"{ms}_{ne}" )
-                    rmse_loss.append(valrmse_loss)
-
-            ##lower the RMSEq the better
-            mn_rmse_loss = min(rmse_loss)
-            bst_hypeindex = rmse_loss.index(mn_rmse_loss)
-            #print(f"Class: {mod}, hyperparameter(mx_smp_n-esti): {best_hyp[bst_hypeindex]}, min RMSE LOSS : {mn_rmse_loss}")
-            self.best_hyper[type(mod()).__name__] = {best_hyp[bst_hypeindex] : mn_rmse_loss}
-
-
+    
     def pretty_data(self):
 
         if self.data is not None:
@@ -235,16 +234,23 @@ class ModellingGridSearch:
     def find_best_model(self):
 
         print(self.select_model)
-
-
         ##lower the RMSEq the better
         mn_rmse_loss = min(self.select_model[-1])
         bst_hypeindex = np.where(self.select_model[-1]==mn_rmse_loss)[0][0]  #self.select_model[-1].index(mn_rmse_loss)
         #print(mn_rmse_loss,bst_hypeindex)
+        ###this is a possible limitation where the index have been explicitly defined as beeing assocaited to a data type
         self.model_selected = {
                 'Best_model' : self.select_model[0][bst_hypeindex],
                 'Parameters' : self.select_model[1][bst_hypeindex],
-                'RMSE' : mn_rmse_loss
+                'RMSE' : mn_rmse_loss,
+                'Precision_train' : self.select_model[2][bst_hypeindex],
+                'Recall_train' : self.select_model[3][bst_hypeindex],
+                'F1_train' : self.select_model[4][bst_hypeindex],
+                'Accuracy_train' : self.select_model[5][bst_hypeindex],
+                'Precision_test' : self.select_model[6][bst_hypeindex],
+                'Recall_test' : self.select_model[7][bst_hypeindex],
+                'F1_test' : self.select_model[8][bst_hypeindex],
+                'Accuracy_test' : self.select_model[9][bst_hypeindex],
                 }
 
         return(self.model_selected)
@@ -260,7 +266,7 @@ def evaluate_all_models(csv,labl):
   
     #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
 
-    mgs.tune_regression_model_hyperparameters(mgs.models,mgs.train_split)
+    mgs.tune_classification_model_hyperparameters(mgs.models,mgs.train_split)
     
     return(mgs.find_best_model())
     
