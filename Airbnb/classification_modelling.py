@@ -112,16 +112,15 @@ class ModellingGridSearch:
         max_depth = np.array([1,2,3,4,5,6,7,8,9,10])
         n_neighbors = np.arange(1,21)
 
-        ##chnage solver form default due to L1 penalty being seen in data
-        ##chnage max_iter from default since more were needed from 100->1000->5000
+        ##change solver form default due to L1 penalty being seen in data
+        ##change max_iter from default since more were needed from 100->1000->5000
         ##anything more than a 1000 iteration is an issue 
         self.hyparamtyp1_dist = {
             'C' : regularisation,
             'penalty' : penalty,
             'warm_start' : warm_start,
             'max_iter' : [1000,5000],
-            'solver' : ['liblinear']       
-
+            'solver' : ['liblinear']      
         }
 
         self.hyparamtyp2_dist = {
@@ -162,7 +161,7 @@ class ModellingGridSearch:
 
         for mod in models:
 
-            tuner = GridSearchCV(estimator = mod(), param_grid= models[mod])
+            tuner = GridSearchCV(estimator = mod(), param_grid = models[mod])
             tuner.fit(ts['xtrain'], ts['ytrain'])
             print(type(mod()).__name__)
             print(tuner.best_params_)
@@ -171,8 +170,11 @@ class ModellingGridSearch:
             ##get precision recal,F1 and accuracy scores for training and test 
             y_pred = tuner.predict(ts['xtrain'])
             y_pred_test = tuner.predict(ts['xtest'])
+            y_pred_vald = tuner.predict(ts['xvalid'])
             p,r,f1,ac = self.get_prfac(ts['ytrain'],y_pred,'micro')
             pt,rt,f1t,act = self.get_prfac(ts['ytest'],y_pred_test,'micro')
+            ##only need accuracy value based on selection criteria
+            pv,rv,f1v,acv = self.get_prfac(ts['yvalid'],y_pred_vald,'micro')
 
             print(f"Precision:{p}\tRecall:{r}\tF1:{f1}\tAccuracy:{ac}")
             
@@ -181,9 +183,8 @@ class ModellingGridSearch:
             _k = sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_))     
             self.best_hyper[type(mod()).__name__] = {_k : tuner.best_score_}
 
-            columns = np.array([[type(mod()).__name__,_k,p,r,f1,ac,pt,rt,f1t,act,tuner.best_score_]])
-            #print(columns.ndim, columns.shape)
-            #print(self.select_model.ndim, self.select_model.shape)
+            columns = np.array([[type(mod()).__name__,_k,p,r,f1,ac,pt,rt,f1t,act,tuner.best_score_,acv]])
+
             self.select_model = np.append(self.select_model, columns.transpose(),axis=1)
 
             self.save_model(type(mod()).__name__,tuner,models[mod],self.best_hyper)
@@ -234,15 +235,15 @@ class ModellingGridSearch:
     def find_best_model(self):
 
         print(self.select_model)
-        ##lower the RMSEq the better
-        mn_rmse_loss = min(self.select_model[-1])
-        bst_hypeindex = np.where(self.select_model[-1]==mn_rmse_loss)[0][0]  #self.select_model[-1].index(mn_rmse_loss)
+        ##using the accuracy score of the validation set to select best model
+        mx_ac = max(self.select_model[-1])
+        bst_hypeindex = np.where(self.select_model[-1]==mx_ac)[0][0]  #self.select_model[-1].index(mn_rmse_loss)
         #print(mn_rmse_loss,bst_hypeindex)
         ###this is a possible limitation where the index have been explicitly defined as beeing assocaited to a data type
         self.model_selected = {
                 'Best_model' : self.select_model[0][bst_hypeindex],
                 'Parameters' : self.select_model[1][bst_hypeindex],
-                'RMSE' : mn_rmse_loss,
+                'Validation_accuracy' : mx_ac,
                 'Precision_train' : self.select_model[2][bst_hypeindex],
                 'Recall_train' : self.select_model[3][bst_hypeindex],
                 'F1_train' : self.select_model[4][bst_hypeindex],
