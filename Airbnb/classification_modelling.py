@@ -1,19 +1,15 @@
-from tabular_data import load_airbnb
-from sklearn.linear_model import LogisticRegression
+from pathlib import Path
+from sklearn import model_selection
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
-from xgboost import XGBClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import precision_score, recall_score, f1_score,accuracy_score
+from sklearn.model_selection import GridSearchCV
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn import model_selection
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import mean_squared_error, precision_score, recall_score, f1_score,accuracy_score
-from sklearn.preprocessing import scale
-from pathlib import Path
-
 from sklearn.preprocessing import OneHotEncoder
-
-
+from tabular_data import load_airbnb
+from xgboost import XGBClassifier
 import joblib
 import json
 import matplotlib.pyplot as plt 
@@ -23,7 +19,10 @@ import pandas as pd
 
 
 class NumpyEncoder(json.JSONEncoder):
-    """ Special json encoder for numpy types """
+    """ Special json encoder for numpy types
+        Deals with json.dumps limitations todealing with numpy arrays
+    
+     """
     def default(self, obj):
         if isinstance(obj, (np.int_, np.intc, np.intp, np.int8,
                             np.int16, np.int32, np.int64, np.uint8,
@@ -111,7 +110,7 @@ class ModellingGridSearch:
         
         
         """
-
+        #call the dictionaries of hyperparameters 
         self.hyperparameters()
 
         self.models = {
@@ -121,7 +120,7 @@ class ModellingGridSearch:
             KNeighborsClassifier :self.hyparamtyp3_dist ,
             MLPClassifier : self.hyparamtyp4_dist,
             AdaBoostClassifier : self.hyparamtyp5_dist,
-            XGBClassifier : self.hyparamtyp6_dist
+            #XGBClassifier : self.hyparamtyp6_dist
               
         }
 
@@ -361,9 +360,6 @@ def evaluate_all_models(csv,labl):
     
     return(mgs.find_best_model())
     
-
-
-
         
 
 if __name__ == "__main__":
