@@ -2,6 +2,7 @@ from tabular_data import load_airbnb
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.ensemble import AdaBoostClassifier
+from xgboost import XGBClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn import model_selection
@@ -44,11 +45,23 @@ class ModellingGridSearch:
         self.train_split ={}
         self.best_hyp={}
         self.data  = {}
-        self.select_model= np.empty((11,0))
+        self.select_model= np.empty((12,0))
         self.model_selected ={}
         
 
-    def sgd_modelling(self,csv,labl):
+    def split_modelling(self,csv,labl):
+                
+        """ Split the data ready for classificaton
+
+            Args:
+                csv                 : Data for splitting
+                Labl                : What are we trying to predict
+        
+            
+            Returns:
+                Binds split data to class 
+        
+        """
 
         ###capture all the features and labels
         (X,y) = load_airbnb(csv,labl,'classification')
@@ -75,6 +88,11 @@ class ModellingGridSearch:
 
         
     def plot_data(self):
+        """
+        Plot function not used but useful for future
+        
+        
+        """
         x_ax = range(len(ytest))
         plt.plot(x_ax, ytest, label="original")
         plt.plot(x_ax, ypred, label="predicted")
@@ -88,6 +106,11 @@ class ModellingGridSearch:
 
 
     def define_models(self):
+        """ 
+        Defines the models to be used and the link to relevant hyperparameters 
+        
+        
+        """
 
         self.hyperparameters()
 
@@ -97,11 +120,16 @@ class ModellingGridSearch:
             RandomForestClassifier :self.hyparamtyp2_dist,
             KNeighborsClassifier :self.hyparamtyp3_dist ,
             MLPClassifier : self.hyparamtyp4_dist,
-            AdaBoostClassifier : self.hyparamtyp5_dist  
+            AdaBoostClassifier : self.hyparamtyp5_dist,
+            XGBClassifier : self.hyparamtyp6_dist
               
         }
 
     def hyperparameters(self):
+        """
+        Group of dictionaries with releavnt hyperpapramters to be bound to the model select. 
+        
+        """
 
         ##set some standard value where ML algo have overlapping parameters name
         ##note sharing same name does not denote same behaviour across each model
@@ -111,6 +139,7 @@ class ModellingGridSearch:
         n_estimators = np.array([2,4,8,16,32,64,1024])
         max_depth = np.array([1,2,3,4,5,6,7,8,9,10])
         n_neighbors = np.arange(1,21)
+        learning_rate = [1,2,3,4,5]
 
         ##change solver form default due to L1 penalty being seen in data
         ##change max_iter from default since more were needed from 100->1000->5000
@@ -144,13 +173,31 @@ class ModellingGridSearch:
 
         self.hyparamtyp5_dist = {
             'n_estimators' : n_estimators,
-            'learning_rate' : [1,2,3,4,5],
+            'learning_rate' : learning_rate
             }
+
+        self.hyparamtyp6_dist = {
+            'max_depth' : max_depth,
+            'eta' : learning_rate,
+            'objective' : ['binary:logistic'],
+            'eval_metric' : ['auc','aucpr','ndcg']
+        }
 
 
 
 
     def tune_classification_model_hyperparameters(self,models,train_split=None):
+        """
+        Run model using grid search against hyperparameter values. Saves models and store metric e.g. accuracy
+
+        Arg:
+            models :  list of models from define_models()
+            train_split : split data from split_modelling
+        
+        Return:
+            Binds dictionary of metric to class 
+        
+        """
 
           ##shorthand notation for dict
         if train_split is not None:
@@ -191,16 +238,29 @@ class ModellingGridSearch:
 
 
     def get_prfac(self, ytrain, y_pred, avg='micro'):
-            p = precision_score(ytrain, y_pred, average=avg, zero_division=0)
-            r = recall_score(ytrain, y_pred, average=avg,zero_division=0)
-            f1 = f1_score(ytrain, y_pred, average=avg,zero_division=0)
-            ac = accuracy_score(ytrain, y_pred)
-        
-            return(p,r,f1,ac)
+        """
+        Gets the precision, recal F1 score and accuracy (prfac)
+
+        Args:
+            ytrain : the label
+            y_pred : the prediction 
+            avg :  'micro'->Calculate metrics globally by counting the total true positives, false negatives and false positives.
+
+        """
+
+        p = precision_score(ytrain, y_pred, average=avg, zero_division=0)
+        r = recall_score(ytrain, y_pred, average=avg,zero_division=0)
+        f1 = f1_score(ytrain, y_pred, average=avg,zero_division=0)
+        ac = accuracy_score(ytrain, y_pred)
+    
+        return(p,r,f1,ac)
 
     
     def pretty_data(self):
-
+        """
+        Disused function        
+        
+        """
         if self.data is not None:
             self.df = pd.DataFrame(self.data)
             #df.to_csv("all_score.csv")
@@ -209,6 +269,16 @@ class ModellingGridSearch:
         #print(self.bstdf)
 
     def get_path(self,nme):
+        """
+        Create directory for saving model results
+
+        Arg:
+            Takes model name
+        
+        Return:
+            The pathway for storing  modellled data
+
+        """
 
         modir = Path(f'models/regression/{nme}')
         modir.mkdir(parents=True,exist_ok=True)
@@ -216,6 +286,16 @@ class ModellingGridSearch:
         return modir
 
     def save_model(self,nme, model,hyp, metric):
+        """
+        Saves model into model directory
+        Arg:
+            nme : Name of model
+            model_hyp : Selected hyperparameters
+            metric : The best score  for best hyperparameters
+        Return
+            Nothing
+
+        """
                 
         modir = self.get_path(nme)
              
@@ -233,6 +313,16 @@ class ModellingGridSearch:
 
         #self.pretty_data()
     def find_best_model(self):
+        """
+        Based on the validation data determines the best model looking for the highest accuracy value for all models 
+        Arg:
+            None
+        Return
+
+            model_selected : Contains all scores  associated to best model
+        
+        
+        """
 
         print(self.select_model)
         ##using the accuracy score of the validation set to select best model
@@ -262,7 +352,7 @@ class ModellingGridSearch:
 def evaluate_all_models(csv,labl):
 
     mgs = ModellingGridSearch()
-    mgs.sgd_modelling(csv,labl)
+    mgs.split_modelling(csv,labl)
     mgs.define_models()
   
     #mgs.custom_tune_regression_model_hyperparameters(mgs.models,mgs.train_split,mgs.hyparam_dist)
