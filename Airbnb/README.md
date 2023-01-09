@@ -115,8 +115,11 @@ Validation_accuracy : 0.37349397590361444
 Accuracy_train : 0.6897590361445783
 Accuracy_test : 0.3855421686746988
 
-For the fist time the accuracy for training has decreased. But the Regularisation range change was between 2-3 yet 1 was selected.  
+For the first time the accuracy for training has decreased. But the Regularisation range change was between 2-3 yet 1 was selected.  
 [0.1,0.2,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1, 2.2, 2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,4]
+
+
+The point here is that more optimisaiton is possible. 
 
 Note
 There has consistently been an issue with Liblinear convergence yet the choice was 1000 or 5000 and 5000 has never been selected as the best parameters. Therefore selection was done. Therefore 1000 was removed and 1500 also added 'max_iter' : [1500,2000,2500,3000,3500,5000]
@@ -124,7 +127,6 @@ There has consistently been an issue with Liblinear convergence yet the choice w
 Liblinear convergence error were still noted even with min increased to 1500
 
 
-In 
 
 
 
