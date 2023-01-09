@@ -21,6 +21,7 @@ import pandas as pd
 class NumpyEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types
         Deals with json.dumps limitations todealing with numpy arrays
+        Also addtion to deal with functions 
     
      """
     def default(self, obj):
@@ -33,6 +34,9 @@ class NumpyEncoder(json.JSONEncoder):
             return float(obj)
         elif isinstance(obj, (np.ndarray,)):
             return obj.tolist()
+        elif isinstance(obj,(RandomForestClassifier , LogisticRegression)):
+            return str(obj)
+
         return json.JSONEncoder.default(self, obj)
 
 class ModellingGridSearch:
@@ -71,7 +75,7 @@ class ModellingGridSearch:
         #sc = StandardScaler()
         #X = sc.fit_transform(X)
         #y = sc.fit_transform(y)
-        xtrain, xtest, ytrain, ytest = model_selection.train_test_split(X, y, test_size=0.3)
+        xtrain, xtest, ytrain, ytest = model_selection.train_test_split(X, y, test_size=0.2)
         ###does not like NaN values need to use HistGradientBoostingRegressor() or HistGradientBoostingClassifier()
 
         xvalid, xtest, yvalid, ytest = model_selection.train_test_split(xtest, ytest, test_size=0.5)
@@ -116,10 +120,10 @@ class ModellingGridSearch:
         self.models = {
        
             LogisticRegression : self.hyparamtyp1_dist ,
-            RandomForestClassifier :self.hyparamtyp2_dist,
-            KNeighborsClassifier :self.hyparamtyp3_dist ,
-            MLPClassifier : self.hyparamtyp4_dist,
-            AdaBoostClassifier : self.hyparamtyp5_dist,
+            #RandomForestClassifier :self.hyparamtyp2_dist,
+            #KNeighborsClassifier :self.hyparamtyp3_dist ,
+            #MLPClassifier : self.hyparamtyp4_dist,
+            #AdaBoostClassifier : self.hyparamtyp5_dist,
             #XGBClassifier : self.hyparamtyp6_dist
               
         }
@@ -132,7 +136,7 @@ class ModellingGridSearch:
 
         ##set some standard value where ML algo have overlapping parameters name
         ##note sharing same name does not denote same behaviour across each model
-        regularisation = np.array([0.1,0.2,1,2,3,4],dtype=float)
+        regularisation = np.array([0.1,0.2,1,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,4],dtype=float)
         penalty = np.array(['l1','l2'])
         warm_start = [True]
         n_estimators = np.array([2,4,8,16,32,64,1024])
@@ -147,7 +151,7 @@ class ModellingGridSearch:
             'C' : regularisation,
             'penalty' : penalty,
             'warm_start' : warm_start,
-            'max_iter' : [1000,5000],
+            'max_iter' : [1500,2000,2500,3000,3500,5000],
             'solver' : ['liblinear']      
         }
 
@@ -172,14 +176,16 @@ class ModellingGridSearch:
 
         self.hyparamtyp5_dist = {
             'n_estimators' : n_estimators,
-            'learning_rate' : learning_rate
+            'learning_rate' : learning_rate,
+            'base_estimator': [RandomForestClassifier(), LogisticRegression()]
             }
 
         self.hyparamtyp6_dist = {
             'max_depth' : max_depth,
             'eta' : learning_rate,
             'objective' : ['binary:logistic'],
-            'eval_metric' : ['auc','aucpr','ndcg']
+            'eval_metric' : ['auc','aucpr','ndcg'],
+           
         }
 
 
@@ -236,7 +242,7 @@ class ModellingGridSearch:
             self.save_model(type(mod()).__name__,tuner,models[mod],self.best_hyper)
 
 
-    def get_prfac(self, ytrain, y_pred, avg='micro'):
+    def get_prfac(self, data, pred, avg='micro'):
         """
         Gets the precision, recal F1 score and accuracy (prfac)
 
@@ -247,10 +253,10 @@ class ModellingGridSearch:
 
         """
 
-        p = precision_score(ytrain, y_pred, average=avg, zero_division=0)
-        r = recall_score(ytrain, y_pred, average=avg,zero_division=0)
-        f1 = f1_score(ytrain, y_pred, average=avg,zero_division=0)
-        ac = accuracy_score(ytrain, y_pred)
+        p = precision_score(data, pred, average=avg, zero_division=0)
+        r = recall_score(data, pred, average=avg,zero_division=0)
+        f1 = f1_score(data, pred, average=avg,zero_division=0)
+        ac = accuracy_score(data, pred)
     
         return(p,r,f1,ac)
 
@@ -260,11 +266,11 @@ class ModellingGridSearch:
         Disused function        
         
         """
-        if self.data is not None:
-            self.df = pd.DataFrame(self.data)
-            #df.to_csv("all_score.csv")
+        if self.select_model is not None:
+            self.df = pd.DataFrame(self.select_model)
+            self.df.to_csv("all_score.csv")
 
-        self.bstdf = pd.DataFrame(self.best_hyper)
+        #self.bstdf = pd.DataFrame(self.best_hyper)
         #print(self.bstdf)
 
     def get_path(self,nme):
@@ -323,6 +329,10 @@ class ModellingGridSearch:
         
         """
 
+        ##write all the model informaiton to csv
+
+
+        self.pretty_data()
         print(self.select_model)
         ##using the accuracy score of the validation set to select best model
         mx_ac = max(self.select_model[-1])
