@@ -79,8 +79,7 @@ def load_airbnb(csv,labl=None,learning:str = None):
 
     
     dg = clean_tabular_data(csv)
-    if  'classification' == learning.lower() :  
-                
+    if  'classification' == learning.lower() :                  
         features = dg.data.astype(str)      
         features.drop(['ID'],axis=1,inplace=True) 
     elif 'deep' == learning.lower():     
