@@ -56,9 +56,6 @@ class ModellingSearch:
         self.model_metrics= {}
         ##this is for 7 rows of data on a 2D array
         self.select_model= np.empty((7,0))
-        print (self.config)
-  
-        
         
 
     def split_modelling(self,csv,labl):
@@ -394,7 +391,7 @@ if __name__ == "__main__":
 
     #bst_mod = evaluate_all_models(csv,labl)
     bst_mod = find_best_nn(csv,labl)
-    print(bst_mod)
+    print(json.dumps(bst_mod, indent=4, sort_keys=True))
    
     
     
