@@ -124,8 +124,7 @@ class ModellingGridSearch:
             #KNeighborsClassifier :self.hyparamtyp3_dist ,
             #MLPClassifier : self.hyparamtyp4_dist,
             #AdaBoostClassifier : self.hyparamtyp5_dist,
-            #XGBClassifier : self.hyparamtyp6_dist
-              
+            #XGBClassifier : self.hyparamtyp6_dist              
         }
 
     def hyperparameters(self):
@@ -238,7 +237,7 @@ class ModellingGridSearch:
             columns = np.array([[type(mod()).__name__,_k,p,r,f1,ac,pt,rt,f1t,act,tuner.best_score_,acv]])
 
             self.select_model = np.append(self.select_model, columns.transpose(),axis=1)
-
+            print(self.select_model)
             self.save_model(type(mod()).__name__,tuner,models[mod],self.best_hyper)
 
 
