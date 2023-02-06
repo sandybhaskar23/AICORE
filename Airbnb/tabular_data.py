@@ -1,9 +1,14 @@
 import pandas as pd
 import re
 import numpy as np
+import torch
+from torch.utils.data import Dataset
+from sklearn import preprocessing
+
+
 '''
 
-This projects has a list of data from AirDNB but it needs tidying up first
+This projects has a list of data from AirBNB but it needs tidying up first
 
 1)There are missing values in the rating columns. Start by defining a function called remove_rows_with_missing_ratings which removes the rows with missing values in these columns. It should take in the dataset as a pandas dataframe and return the same type.
 
@@ -70,25 +75,50 @@ def clean_tabular_data(CSV):
 
     return dg
 
-def load_airbnb(csv,labl=None):
+def load_airbnb(csv,labl=None,learning:str = None):
 
     
     dg = clean_tabular_data(csv)
-    features = dg.data.select_dtypes(['float64', 'int64'])
+    if  'classification' == learning.lower() :  
+                
+        features = dg.data.astype(str)      
+        features.drop(['ID'],axis=1,inplace=True) 
+    elif 'deep' == learning.lower():     
+        features = dg.data
+        le = preprocessing.LabelEncoder()
+        features['Category'] = le.fit_transform(features['Category'])
+        features.drop(['ID'],axis=1,inplace=True)   
+        features = features.select_dtypes(['float64', 'int64','int32'])
+    else:
+        features = dg.data.select_dtypes(['float64', 'int64'])
     #print(features)
-    df_features= pd.DataFrame(features)
-    #print(df_features.columns.values.tolist())
+    df_features= pd.DataFrame(features)   
+
     ##ensure you use axis =1 for columns header otherwise tries rows
+    ##ID column skews data.It provides no relevant information to the learning process 
+    
     labels = df_features[labl]
-    df_features.drop([labl],axis=1, inplace=True)
+    df_features.drop([labl],axis=1,inplace=True)
+    print(df_features.dtypes)
     #print(df_features)
     return (df_features,labels)
 
-    
-    
 
-    
+class AirbnbNightlyPriceImageDataset(DataGroomer,Dataset):
 
+    def __init__(self,csv,labl,learning):
+        super().__init__(csv)
+        self.features , self.labels = load_airbnb(csv,labl,learning)  
+        
+        #self.features = self.features.astype(int)    
+
+    def __getitem__(self,idx):
+        
+        return(torch.tensor(self.features.iloc[idx]), self.labels.iloc[idx])
+
+    def __len__(self):
+        return len(self.features)
+   
 
 if __name__ == "__main__":
 
