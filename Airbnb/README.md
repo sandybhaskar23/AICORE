@@ -127,6 +127,16 @@ There has consistently been an issue with Liblinear convergence yet the choice w
 Liblinear convergence error were still noted even with min increased to 1500
 
 
+#Deep Learning model
+
+The deep_learning_modelling.py looks at the AIRBnb data 
+
+It first builds a data loader  which shuffles the data and then splits it into 3 datasets validation,training and testing
+A neural network class has ben built using pytorch linear, and a Sigmoid activation function to prevent oversimplification of model predictions.
+The dataloader passes the data to the NN class and data is batched accordingly.  16 different parameterisation are selected and all done by factor of 9
+Every parameterisation is store in the hyperparameters.json, metrics json and model.pt file.  The best model instance is selected and reported. 
+
+
 
 
 
