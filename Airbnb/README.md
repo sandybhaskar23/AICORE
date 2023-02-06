@@ -134,7 +134,11 @@ The deep_learning_modelling.py looks at the AIRBnb data
 It first builds a data loader  which shuffles the data and then splits it into 3 datasets validation,training and testing
 A neural network class has ben built using pytorch linear, and a Sigmoid activation function to prevent oversimplification of model predictions.
 The dataloader passes the data to the NN class and data is batched accordingly.  16 different parameterisation are selected and all done by factor of 9
-Every parameterisation is store in the hyperparameters.json, metrics json and model.pt file.  The best model instance is selected and reported. 
+Every parameterisation is store in the hyperparameters.json, metrics json and model.pt file.  The best model instance is selected and reported.
+
+Model is able to deal with labels by hotencoding them. For the AiBNB project this category column has been labelled and converted to int32 value.
+
+##possible future feature to be able to autmatically convert all labels but this is left to ensure you as a user understand the datatype of the features before fully making decision top convert dtypes.
 
 
 
