@@ -119,7 +119,22 @@ For the first time the accuracy for training has decreased. But the Regularisati
 [0.1,0.2,1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1, 2.2, 2.3,2.4,2.5,2.6,2.7,2.8,2.9,3,4]
 
 
-The point here is that more optimisaiton is possible. 
+![CategoricalPrediction](https://github.com/sandybhaskar23/AICORE/tree/main/Airbnb/Classification_prediction_of_category.png)
+
+Best_model : LogisticRegression
+Parameters : 2.3_2000_l1_liblinear_True
+Validation_accuracy : 0.3373493975903614
+Precision_train : 1.0
+Recall_train : 1.0
+F1_train : 1.0
+Accuracy_train : 1.0
+Precision_test : 0.40963855421686746
+Recall_test : 0.40963855421686746
+F1_test : 0.4096385542168675
+Accuracy_test : 0.40963855421686746
+
+
+The point here is that more optimization is possible and needed. 
 
 Note
 There has consistently been an issue with Liblinear convergence yet the choice was 1000 or 5000 and 5000 has never been selected as the best parameters. Therefore selection was done. Therefore 1000 was removed and 1500 also added 'max_iter' : [1500,2000,2500,3000,3500,5000]
