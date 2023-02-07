@@ -136,9 +136,18 @@ A neural network class has ben built using pytorch linear, and a Sigmoid activat
 The dataloader passes the data to the NN class and data is batched accordingly.  16 different parameterisation are selected and all done by factor of 9
 Every parameterisation is store in the hyperparameters.json, metrics json and model.pt file.  The best model instance is selected and reported.
 
+
+
+#Using categorical data and floats within NN model
 Model is able to deal with labels by hotencoding them. For the AiBNB project this category column has been labelled and converted to int32 value.
 
+![Performance](https://github.com/sandybhaskar23/AICORE/tree/main/Airbnb/loss.svg)
+
+
+
+
 ##possible future feature to be able to autmatically convert all labels but this is left to ensure you as a user understand the datatype of the features before fully making decision top convert dtypes.
+
 
 
 
