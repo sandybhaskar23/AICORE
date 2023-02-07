@@ -142,7 +142,10 @@ Every parameterisation is store in the hyperparameters.json, metrics json and mo
 Model is able to deal with labels by hotencoding them. For the AiBNB project this category column has been labelled and converted to int32 value.
 
 ![Performance](https://github.com/sandybhaskar23/AICORE/tree/main/Airbnb/loss.svg)
+This shows the loss decresing indicating learning. 
 
+![ToolRunning](https://github.com/sandybhaskar23/AICORE/tree/main/Airbnb/SnapshotOfRunningTool.png)
+This shows the screen output 
 
 
 
