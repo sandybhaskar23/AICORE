@@ -37,7 +37,7 @@ History:
 There is a method which allows custom tuning  rather than use the GridSearchCV wrapper class.   Cannot be accessed via command line but the way the ModellingGridSearch class is called will allow access to it. See evaluate_all_models() more order of calling
 
 
-#classification_modelling.py
+# classification_modelling.py
 
 This scripts is built on modelling.py but asseses the below classifers to determine the Category each room belongs in and their accuacy of predicting it. A full Grid search is used to determine the best parameters. T???talk about overfitting 
 
@@ -127,7 +127,7 @@ There has consistently been an issue with Liblinear convergence yet the choice w
 Liblinear convergence error were still noted even with min increased to 1500
 
 
-#Deep Learning model
+# Deep Learning model
 
 The deep_learning_modelling.py looks at the AIRBnb data 
 
@@ -138,7 +138,7 @@ Every parameterisation is store in the hyperparameters.json, metrics json and mo
 
 
 
-#Using categorical data and floats within NN model
+## Using categorical data and floats within NN model
 Model is able to deal with labels by hotencoding them. For the AiBNB project this category column has been labelled and converted to int32 value.
 
 ![Performance](https://github.com/sandybhaskar23/AICORE/tree/main/Airbnb/loss.svg)
@@ -149,7 +149,7 @@ This shows the screen output
 
 
 
-##possible future feature to be able to autmatically convert all labels but this is left to ensure you as a user understand the datatype of the features before fully making decision top convert dtypes.
+#### possible future feature to be able to autmatically convert all labels but this is left to ensure you as a user understand the datatype of the features before fully making decision top convert dtypes.
 
 
 
