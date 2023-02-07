@@ -1,24 +1,20 @@
 from pathlib import Path
-
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import r2_score 
+from statistics import mean 
 from tabular_data import AirbnbNightlyPriceImageDataset 
-
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter 
-from statistics import mean 
+import json
 import numpy as np
 import pandas as pd
 import time
 import torch
+import torch.nn.functional as F
 import yaml
 
-##
-
-import json
 
 class NumpyEncoder(json.JSONEncoder):
     """ Special json encoder for numpy types
