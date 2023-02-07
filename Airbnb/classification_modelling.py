@@ -48,7 +48,7 @@ class ModellingGridSearch:
         self.train_split ={}
         self.best_hyp={}
         self.data  = {}
-        self.select_model= np.empty((12,0))
+        self.select_model= np.empty((14,0))
         self.model_selected ={}
         
 
@@ -90,7 +90,7 @@ class ModellingGridSearch:
         }
 
         
-    def plot_data(self):
+    def plot_data(self,ytest,ypred):
         """
         Plot function not used but useful for future
         
@@ -129,7 +129,7 @@ class ModellingGridSearch:
 
     def hyperparameters(self):
         """
-        Group of dictionaries with releavnt hyperpapramters to be bound to the model select. 
+        Group of dictionaries with relevant hyperparamters to be bound to the model select. 
         
         """
 
@@ -234,7 +234,7 @@ class ModellingGridSearch:
             _k = sep.join(str(tuner.best_params_[x]) for x in sorted(tuner.best_params_))     
             self.best_hyper[type(mod()).__name__] = {_k : tuner.best_score_}
 
-            columns = np.array([[type(mod()).__name__,_k,p,r,f1,ac,pt,rt,f1t,act,tuner.best_score_,acv]])
+            columns = np.array([[type(mod()).__name__,_k,p,r,f1,ac,pt,rt,f1t,act,tuner.best_score_,ts['ytest'],y_pred_test,acv]])
 
             self.select_model = np.append(self.select_model, columns.transpose(),axis=1)
             print(self.select_model)
@@ -351,6 +351,9 @@ class ModellingGridSearch:
                 'F1_test' : self.select_model[8][bst_hypeindex],
                 'Accuracy_test' : self.select_model[9][bst_hypeindex],
                 }
+
+        #plot the best model data 
+        self.plot_data(self.select_model[11][bst_hypeindex],self.select_model[12][bst_hypeindex])
 
         return(self.model_selected)
             
